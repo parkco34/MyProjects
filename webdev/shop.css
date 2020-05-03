@@ -1,0 +1,107 @@
+﻿body {
+    background-image: url("Images/pexels-photo-281260.jpeg");
+    background-size: cover;
+    font-weight: normal;
+    font-family: Tahoma;
+}
+
+h1 {
+    font-size: 2em;
+    padding: 10px;
+    text-align: center;
+}
+
+.items {
+    display: grid;
+    grid-template-columns: 300px 300px 300px 300px 300px;
+    text-align: center;
+}
+
+.item {
+    width: 283px;
+    padding: 10px;
+    justify-content: space-between;
+    align-content: space-between;
+}
+
+.itemdesc {
+    font-size: .75em;
+    text-align: center;
+}
+
+.utility {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.price, .cost {
+    font-size: 1.5em;
+}
+
+.erase {
+    vertical-align: top;
+    margin-top: 5px;
+    display: inline-block;
+    cursor: pointer;
+    background: linear-gradient(to bottom, #43609C 18%, #ffffff 100%);
+    font-weight: bold;
+    padding: 1px 1px;
+    border-radius: 5px;
+    width: 75px;
+    height: 20px;
+    text-align: center;
+}
+
+.itemtotal {
+    padding: 10px;
+    margin-left: 5px;
+    font-size: 1.5em;
+}
+
+.amount {
+    display: inline-block;
+    cursor: pointer;
+    background: linear-gradient(to bottom, #43609C 18%, #ffffff 100%);
+    font-weight: bold;
+    border-radius: 5px;
+    width: 20px;
+}
+
+.txtbox {
+    width: 25px;
+}
+
+.totalamount {
+    width: 75px;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+.stretch {
+    width: 100%;
+    display: inline-block;
+    font-size: 0;
+    line-height: 0;
+}
+
+.checkout-items {
+    display: grid;
+    grid-template-columns: 300px 300px 300px 300px 300px;
+    text-align: center;
+}
+
+.order_buttons {
+    
+}
+
+.checkout_amounts {
+    text-align: left;
+}

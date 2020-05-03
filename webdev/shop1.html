@@ -1,0 +1,473 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Ingredients</title>
+    <meta charset="utf-8" />
+    <!--<meta name="viewport" content="width=device-width, initial-scale=1.0" />-->
+    <link rel="stylesheet" type="text/css" href="shop.css" />
+    <script type="text/javascript" src="shop.js"></script>
+</head>
+
+<body>
+    <section id="main">
+        <!--Header -->
+        <h1>Vegetable Paella Recipe</h1>
+        <!--<img src="Images/veganmeal.jpg" alt="Photo" height="348" width="400"/>-->
+        <section id="products">
+            <article class="items">
+                <div class="item">
+                    <h2>INGREDIENTS</h2>
+                </div>
+
+                <div class="item">
+                    <h2>FUN FACTS</h2>
+                </div>
+
+                <div class="item">
+                    <h2>PRICE</h2>
+                </div>
+
+                <div class="item">
+                    <h2>QUANTITY</h2>
+                </div>
+
+                <div class="item">
+                    <h2>TOTAL</h2>
+                </div>
+
+                <span class="stretch"></span>
+            </article>
+
+            <div class="clear"></div> <!--What the hell this do???-->
+            <hr />
+            <article class="items">
+                <div class="item">
+                    <img src="Images/oliveoil.jpg" alt="Photo" height="250" width="250" />
+                    <div class="itemdesc">
+                        <h2>Extra Virgin Olive Oil</h2>
+                    </div>
+                </div>
+
+                <div class="utility">
+                    <p>
+                        Extra virgin olive oil is essentially "fresh squeezed" from the fruit of the olive tree, without alteration of the color, 
+                        taste, and nutrients or vitamins. Because of the integrity of the product, and its antioxidant components, 
+                        olive oil will keep longer than all other vegetable oils.
+                    </p>
+                </div>
+
+                <div class="cost">
+                    <p id="cost1">$8.99</p>
+                </div>
+
+                <form class="myForm">
+                    <div class="amount" value="increase" onclick="incrementor('qty1', 0); total('cost1', 'qty1', 'totals1');">+</div>
+                    <input type="number" class="txtbox" id="qty1" value="0" />
+                    <div class="amount" value="decrease" onclick="incrementor('qty1', 1); total('cost1', 'qty1', 'totals1');">-</div><br />
+                    <input type="button" class="erase" value="clear" onclick="clearDaShit('qty1', 'totals1')" />
+                </form>
+                <div class="price">
+                    <p id="totals1">&nbsp;</p>
+                </div>
+            </article>
+
+            <div class="clear"></div>
+            <hr />
+            <article class="items">
+                <div class="item">
+                    <img src="Images/limejuice.jpg" alt="Photo" height="235" width="250" />
+                    <div class="itemdesc">
+                        <h2>Limes</h2>
+                    </div>
+                </div>
+
+                <div class="utility">
+                    <p>
+                        The limes are used for lime juice, obviously...
+                    </p>
+                </div>
+
+                <div>
+                    $ <input type="text" class="entercost" id="cost2" placeholder="Dollar Amount for Each">
+                </div>
+
+                <form class="myForm">
+                    <div class="amount" value="increase" onclick="incrementor('qty2', 2); total('cost2', 'qty2', 'totals2');">+</div>
+                    <input type="number" class="txtbox" id="qty2" value="0" />
+                    <div class="amount" value="decrease" onclick="incrementor('qty2', 3); total('cost2', 'qty2', 'totals2');">-</div><br />
+                    <input type="button" class="erase" value="clear" onclick="clearDaShit('qty2', 'totals2')" />
+                </form>
+
+                <div class="price">
+                    <p id="totals2">&nbsp;</p>
+                </div>
+            </article>
+
+            <div class="clear"></div>
+            <hr />
+            <article class="items">
+                <div class="item">
+                    <img src="Images/onion.jpg" alt="Photo" height="250" width="300" />
+                    <div class="itemdesc">
+                        <h2>Yellow Onion</h2>
+                    </div>
+                </div>
+
+                <div class="utility">
+                    <p>
+                        Onions are modified leaves
+                    </p>
+                </div>
+
+                <div class="cost">
+                    <p id="cost3">$1.49</p>
+                </div>
+
+                <form class="myForm">
+                    <div class="amount" value="increase" onclick="incrementor('qty3', 4); total('cost3', 'qty3', 'totals3');">+</div>
+                    <input type="number" class="txtbox" id="qty3" value="0" />
+                    <div class="amount" value="decrease" onclick="incrementor('qty3', 5); total('cost3', 'qty3', 'totals3');">-</div><br />
+                    <input type="button" class="erase" value="clear" onclick="clearDaShit('qty3', 'totals3')" />
+                </form>
+
+                <div class="price">
+                    <p id="totals3">&nbsp;</p>
+                </div>
+            </article>
+
+            <div class="clear"></div>
+            <hr />
+            <article class="items">
+                <div class="item">
+                    <img src="Images/chickpeas.jpg" alt="Photo" height="175" width="250" />
+                    <div class="itemdesc">
+                        <h2>Garbanzo Beans (chickpeas)</h2>
+                    </div>
+                </div>
+
+                <div class="utility">
+                    <p>
+                        Blah blah blah
+                    </p>
+                </div>
+
+                <div class="cost">
+                    <p id="cost4">$.49</p>
+                </div>
+
+                <form class="myForm">
+                    <div class="amount" value="increase" onclick="incrementor('qty4', 6); total('cost4', 'qty4', 'totals4');">+</div>
+                    <input type="number" class="txtbox" id="qty4" value="0" />
+                    <div class="amount" value="decrease" onclick="incrementor('qty4', 7); total('cost4', 'qty4', 'totals4');">-</div><br />
+                    <input type="button" class="erase" value="clear" onclick="clearDaShit('qty4', 'totals4')" />
+                </form>
+
+                <div class="price">
+                    <p id="totals4">&nbsp;</p>
+                </div>
+            </article>
+
+            <div class="clear"></div>
+            <hr />
+
+            <article class="items">
+                <div class="item">
+                    <img src="Images/garlic.jpg" alt="Photo" height="175" width="300" />
+                    <div class="itemdesc">
+                        <h2>Garlic Cloves</h2>
+                    </div>
+                </div>
+
+                <div class="utility">
+                    <p>
+                        Blah blah blah
+                    </p>
+                </div>
+
+                <div class="cost">
+                    <p id="cost5">$.60</p>
+                </div>
+
+                <form class="myForm">
+                    <div class="amount" value="increase" onclick="incrementor('qty5', 8); total('cost5', 'qty5', 'totals5');">+</div>
+                    <input type="number" class="txtbox" id="qty5" value="0" />
+                    <div class="amount" value="decrease" onclick="incrementor('qty5', 9); total('cost5', 'qty5', 'totals5');">-</div><br />
+                    <input type="button" class="erase" value="clear" onclick="clearDaShit('qty5', 'totals5')" />
+                </form>
+
+                <div class="price">
+                    <p id="totals5">&nbsp;</p>
+                </div>
+            </article>
+
+            <div class="clear"></div>
+            <hr />
+
+            <article class="items">
+                <div class="item">
+                    <img src="Images/dicedtomatoes.jpg" alt="Photo" height="200" width="200" />
+                    <div class="itemdesc">
+                        <h2>Diced Tomatoes</h2>
+                    </div>
+                </div>
+
+                <div class="utility">
+                    <p>
+                        Blah blah blah
+                    </p>
+                </div>
+
+                <div class="cost">
+                    <p id="cost6">$.99</p>
+                </div>
+
+                <form class="myForm">
+                    <div class="amount" value="increase" onclick="incrementor('qty6', 10); total('cost6', 'qty6', 'totals6');">+</div>
+                    <input type="number" class="txtbox" id="qty6" value="0" />
+                    <div class="amount" value="decrease" onclick="incrementor('qty6', 11); total('cost6', 'qty6', 'totals6');">-</div><br />
+                    <input type="button" class="erase" value="clear" onclick="clearDaShit('qty6', 'totals6')" />
+                </form>
+
+                <div class="price">
+                    <p id="totals6">&nbsp;</p>
+                </div>
+            </article>
+
+            <div class="clear"></div>
+            <hr />
+
+            <article class="items">
+                <div class="item">
+                    <img src="Images/artichokes.jpg" alt="Photo" height="175" width="250" />
+                    <div class="itemdesc">
+                        <h2>Artichoke Hearts</h2>
+                    </div>
+                </div>
+
+                <div class="utility">
+                    <p>
+                        Blah blah blah
+                    </p>
+                </div>
+
+                <div class="cost">
+                    <p id="cost7">$2.79</p>
+                </div>
+
+                <form class="myForm">
+                    <div class="amount" value="increase" onclick="incrementor('qty7', 12); total('cost7', 'qty7', 'totals7');">+</div>
+                    <input type="number" class="txtbox" id="qty7" value="0" />
+                    <div class="amount" value="decrease" onclick="incrementor('qty7', 13); total('cost7', 'qty7', 'totals7');">-</div><br />
+                    <input type="button" class="erase" value="clear" onclick="clearDaShit('qty7', 'totals7')" />
+                </form>
+
+                <div class="price">
+                    <p id="totals7">&nbsp;</p>
+                </div>
+            </article>
+
+            <div class="clear"></div>
+            <hr />
+
+            <article class="items">
+                <div class="item">
+                    <img src="Images/broth.jpg" alt="Photo" height="220" width="300" />
+                    <div class="itemdesc">
+                        <h2>Vegetable Broth</h2>
+                    </div>
+                </div>
+
+                <div class="utility">
+                    <p>
+                        Blah blah blah
+                    </p>
+                </div>
+
+                <div class="cost">
+                    <p id="cost8">$1.99</p>
+                </div>
+
+                <form class="myForm">
+                    <div class="amount" value="increase" onclick="incrementor('qty8', 14); total('cost8', 'qty8', 'totals8');">+</div>
+                    <input type="number" class="txtbox" id="qty8" value="0" />
+                    <div class="amount" value="decrease" onclick="incrementor('qty8', 15); total('cost8', 'qty8', 'totals8');">-</div><br />
+                    <input type="button" class="erase" value="clear" onclick="clearDaShit('qty8', 'totals8')" />
+                </form>
+
+                <div class="price">
+                    <p id="totals8">&nbsp;</p>
+                </div>
+            </article>
+
+            <div class="clear"></div>
+            <hr />
+
+            <article class="items">
+                <div class="item">
+                    <img src="Images/whitewine.jpg" alt="Photo" height="230" width="300" />
+                    <div class="itemdesc">
+                        <h2>White Wine</h2>
+                    </div>
+                </div>
+
+                <div class="utility">
+                    <p>
+                        Blah blah blah
+                    </p>
+                </div>
+
+                <div class="cost">
+                    <p id="cost9">$11.99</p>
+                </div>
+
+                <form class="myForm">
+                    <div class="amount" value="increase" onclick="incrementor('qty9', 16); total('cost9', 'qty9', 'totals9');">+</div>
+                    <input type="number" class="txtbox" id="qty9" value="0" />
+                    <div class="amount" value="decrease" onclick="incrementor('qty8', 17); total('cost8', 'qty8', 'totals8');">-</div><br />
+                    <input type="button" class="erase" value="clear" onclick="clearDaShit('qty9', 'totals9')" />
+                </form>
+
+                <div class="price">
+                    <p id="totals9">&nbsp;</p>
+                </div>
+            </article>
+
+            <div class="clear"></div>
+            <hr />
+
+            <article class="items">
+                <div class="item">
+                    <img src="Images/redpeppers.jpg" alt="Photo" height="220" width="300" />
+                    <div class="itemdesc">
+                        <h2>Red Bell Peppers</h2>
+                    </div>
+                </div>
+
+                <div class="utility">
+                    <p>
+                        Blah blah blah
+                    </p>
+                </div>
+
+                <div class="cost">
+                    <p id="cost10">$1.50</p>
+                </div>
+
+                <form class="myForm">
+                    <div class="amount" value="increase" onclick="incrementor('qty10', 18); total('cost10', 'qty10', 'totals10');">+</div>
+                    <input type="number" class="txtbox" id="qty10" value="0" />
+                    <div class="amount" value="decrease" onclick="incrementor('qty10', 19); total('cost10', 'qty10', 'totals10');">-</div><br />
+                    <input type="button" class="erase" value="clear" onclick="clearDaShit('qty10', 'totals10')" />
+                </form>
+
+                <div class="price">
+                    <p id="totals10">&nbsp;</p>
+                </div>
+            </article>
+
+            <div class="clear"></div>
+            <hr />
+
+            <article class="items">
+                <div class="item">
+                    <img src="Images/parsely.jpg" alt="Photo" height="200" width="300" />
+                    <div class="itemdesc">
+                        <h2>Parsely</h2>
+                    </div>
+                </div>
+
+                <div class="utility">
+                    <p>
+                        Blah blah blah
+                    </p>
+                </div>
+
+                <div class="cost">
+                    <p id="cost11">$.99</p>
+                </div>
+
+                <form class="myForm">
+                    <div class="amount" value="increase" onclick="incrementor('qty11', 20); total('cost11', 'qty11', 'totals11');">+</div>
+                    <input type="number" class="txtbox" id="qty11" value="0" />
+                    <div class="amount" value="decrease" onclick="incrementor('qty11', 21); total('cost11', 'qty11', 'totals11');">-</div><br />
+                    <input type="button" class="erase" value="clear" onclick="clearDaShit('qty11', 'totals11')" />
+                </form>
+
+                <div class="price">
+                    <p id="totals11">&nbsp;</p>
+                </div>
+            </article>
+
+            <div class="clear"></div>
+            <hr />
+
+            <article class="items">
+                <div class="item">
+                    <img src="Images/peas.jpeg" alt="Photo" height="175" width="300" />
+                    <div class="itemdesc">
+                        <h2>Peas</h2>
+                    </div>
+                </div>
+
+                <div class="utility">
+                    <p>
+                        Blah blah blah
+                    </p>
+                </div>
+
+                <div class="cost">
+                    <p id="cost12">$2.50</p>
+                </div>
+
+                <form class="myForm">
+                    <div class="amount" value="increase" onclick="incrementor('qty12', 22); total('cost12', 'qty12', 'totals12');">+</div>
+                    <input type="number" class="txtbox" id="qty12" value="0" />
+                    <div class="amount" value="decrease" onclick="incrementor('qty12', 23); total('cost12', 'qty12', 'totals12');">-</div><br />
+                    <input type="button" class="erase" value="clear" onclick="clearDaShit('qty12', 'totals12')" />
+                </form>
+
+                <div class="price">
+                    <p id="totals12">&nbsp;</p>
+                </div>
+            </article>
+
+            <div class="clear"></div>
+            <hr />
+        </section>
+        <section id="checkout">
+            <article class="checkout-items">
+                <div class="checkout-item">
+                    <p>&nbsp;</p>
+                </div>
+
+                <div class="checkout-item">
+                    <p>&nbsp;</p>
+                </div>
+
+                <form>
+                    <input type="button" class="order_buttons" id="updte" value="Update" onclick="getSubTotal(); grand();"/>
+                    <input type="button" class="order_buttons" id="checkout" value="Checkout" />
+                    <input type="button" class="order_buttons" id="c    lear-all" value="Clear All" onclick="clearAll();"/>
+                </form>
+
+                <div class="checkout_buttons">
+                    <div class="itemprice" style="text-align">
+                        <p>Subtotal: </p>
+                        <p>Sales Tax: </p>
+                        <p>Grand Total: </p>
+                    </div>
+                </div>
+
+                <div class="checkout_amounts">
+                    <div class="actualprice">
+                        <p id="subtotal">&nbsp;</p>
+                        <p id="salestax">8%</p>
+                        <p id="grandtotal">&nbsp;</p>
+                    </div>
+                </div>
+            </article>
+        </section>
+    </section>
+
+</body>
+</html>
