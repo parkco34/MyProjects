@@ -10,6 +10,7 @@ import smtplib, ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from io import StringIO
+import re
 
 start_date = '02-24-2020'
 final_date = '03-25-2020'
@@ -38,6 +39,19 @@ options.add_argument("--start-maximized")
 options.headless = True
 assert options.headless
 
+pattern_list = ['Province/State','Country/Region','Last Update','Confirmed','Deaths','Recovered']
+def replace_cols(df, pattern, string):
+    k = 0
+    for i in df.columns:
+        newcol = re.sub(pattern, string, i)
+        df.columns.values[k] = newcol
+        print(newcol)
+        k += 1
+
+# Create empty dataframe:
+column_names = ['FIPS','Admin2','Province_State','Country_Region','Last_Update','Lat','Long_','Confirmed','Deaths','Recovered','Active','Combined_Key']
+df = pd.DataFrame(columns=column_names)
+
 #def scrape(start_date, final_date, path_to_click):
 def scrape(start_date, final_date, path_to_click):
     chrome_driver = "C:/Users/parkd/MyScripts/chromedriver.exe"
@@ -58,6 +72,8 @@ def scrape(start_date, final_date, path_to_click):
         if date == '02-24-2020':
  #       if date == '05-01-2020':
             df1 = pd.read_csv(raw_data)
+            
+            rona_info = pd.concat([df, df1], axis=0, ignore_index=True)
         else:
             df2 = pd.read_csv(raw_data)
             rona_info = pd.concat([df1, df2], axis=0, ignore_index=True)
