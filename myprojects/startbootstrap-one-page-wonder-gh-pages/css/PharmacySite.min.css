@@ -21,6 +21,49 @@ header.masthead {
     background-position: center center;
 }
 
+.covid19 {
+    position: relative;
+    text-align: center;
+    color: white;
+    font-size: 4rem;
+}
+
+.covid {
+    padding: 26px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+}
+
+.update {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.55);
+    cursor: pointer;
+}
+
+.update_link {
+    visibility: hidden;
+    text-decoration: none;
+}
+
+.covid19:hover .update_link {
+    visibility: visible;
+    text-decoration: none;
+    color: #BFE2F0;
+}
+
+#stylez2:before{
+    position: relative;
+    padding: 0 4px;
+    content: '§';
+    font-size: 1.5em;
+    top: -13em;
+}
+
 .nav-listitem {
     list-style-type: none;
 }
