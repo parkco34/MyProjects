@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from datetime import date, timedelta, datetime
 import time
 from selenium import webdriver
@@ -13,7 +14,9 @@ from io import StringIO
 import re
 import difflib
 
-start_date = '04-26-2020'
+#start_date = '04-26-2020'
+final_date = '04-25-2020'
+start_date = '02-24-2020'
 today = date.today()
 yesterday = today - timedelta(days=1)
 yesterday = yesterday.strftime('%m-%d-%Y')
@@ -84,23 +87,25 @@ def scrape(start_date, final_date, path_to_click):
 
     return df
 
-rona = scrape('04-26-2020', yesterday, '/html/body/div[4]/div/main/div[2]/div/div[3]/div[1]/div[2]/div[1]/a[1]')
-#rona.to_csv('C:/Users/parkd/MyScripts/raw_data/Coronavirus_update {}.csv'.format(yesterday), index=False)
+rona = scrape(start_date, final_date, '/html/body/div[4]/div/main/div[2]/div/div[3]/div[1]/div[2]/div[1]/a[1]')
+rona.to_csv('C:/Users/parkd/MyScripts/raw_data/Coronavirus_update {}.csv'.format(final_date), index=False)
 
-#df = pd.read_csv(r'C:\Users\parkd\MyScripts\raw_data\Coronavirus_update 04-30-2020.csv')
-# Setting datetimeIndex:
-# =============================================================================
-# datetime = pd.to_datetime(df['Last_Update'])
-# datetime_index = pd.DatetimeIndex(datetime.values)
-# df = df.set_index(datetime_index)
-# df.drop('Last_Update', axis=1, inplace=True)
-# df.to_csv(r'C:\Users\parkd\MyScripts\raw_data\Coronavirus_update 04-30-2020.csv')
-# =============================================================================
+#!=> Get rid of latitude and longitude columns!
+
+# Setting datetimeindex:
+df_i = pd.read_csv(r'C:\Users\parkd\MyScripts\raw_data\Coronavirus 03-25 to 04-26 2020.csv')
+df_f = pd.concat([df_i, rona], axis=0, ignore_index=True)
+df_f['Last_Update'] = pd.to_datetime(df_f['Last_Update'])
+df_f = df_f.set_index('Last_Update')
+
+# Data Analysis: /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\
+ny = df_f[df_f['Province_State'] == 'New York']
+
 
 # MAKE DAILY AUTOMATIC: /\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 
 
-# Send Email: /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+# Send Email: /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 # =============================================================================
 # def sendit():
 #     port = 465
