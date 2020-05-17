@@ -14,7 +14,7 @@ from io import StringIO
 import re
 import difflib
 
-#start_date = '04-26-2020'
+
 final_date = '04-25-2020'
 start_date = '02-24-2020'
 today = date.today()
@@ -30,22 +30,24 @@ yesterday = yesterday.strftime('%m-%d-%Y')
 #     dates = dates.tolist()
 #     return dates
 # =============================================================================
-def get_dates(start_date):
+def get_dates(start_date, final_date):
     start_date = datetime.strptime(start_date, '%m-%d-%Y')
-    dates = pd.date_range(start_date, today - timedelta(days=1), freq='d')
+    #dates = pd.date_range(start_date, today - timedelta(days=1), freq='d')
+    dates = pd.date_range(start_date, final_date, freq='d')
     dates = dates.strftime('%m-%d-%Y')
     dates = dates.tolist()
     return dates
 
-def replace_cols(df, new_columns):
+def replace_columns(df, new_columns):
     k = 0
     for i in df.columns:
+        print('Old col', i, k)
         for j in column_names:
             seq = difflib.SequenceMatcher(None,i, j).ratio()*100
-            if seq >= 85:
+            if seq >= 54:
                 newcol = re.sub(i, j, i)
+                print('Newcol ', newcol)
                 df.columns.values[k] = newcol
-#                print(newcol)
                 k += 1
 
 options = Options()
@@ -65,41 +67,41 @@ def scrape(start_date, final_date, path_to_click):
     
     df = pd.DataFrame(columns=column_names)
 
-    for dt in get_dates(start_date):
+    for dt in get_dates(start_date, final_date):
         waiting.until(EC.element_to_be_clickable((By.XPATH, '//*[@title="{}.csv"]'.format(dt)))).click()
         waiting.until(EC.element_to_be_clickable((By.XPATH, path_to_click))).click()
         raw = driver.find_element_by_xpath('/html/body/pre').text
         raw_data = StringIO(raw)
         
-        if date == start_date:
+        if dt == start_date:
             df1 = pd.read_csv(raw_data)
-            replace_cols(df1, column_names)
+            replace_columns(df1, column_names)
             df1['Last_Update'] = pd.to_datetime(df1['Last_Update'])
             df = pd.concat([df, df1], axis=0, ignore_index=True)
         else:
             df2 = pd.read_csv(raw_data)
-            replace_cols(df2, column_names)
+            replace_columns(df2, column_names)
             df2['Last_Update'] = pd.to_datetime(df2['Last_Update'])
             df = pd.concat([df, df2], axis=0, ignore_index=True)
 
         driver.back()
-        driver.back()    
+        driver.back()
 
     return df
 
 rona = scrape(start_date, final_date, '/html/body/div[4]/div/main/div[2]/div/div[3]/div[1]/div[2]/div[1]/a[1]')
 rona.to_csv('C:/Users/parkd/MyScripts/raw_data/Coronavirus_update {}.csv'.format(final_date), index=False)
 
-#!=> Get rid of latitude and longitude columns!
-
 # Setting datetimeindex:
-df_i = pd.read_csv(r'C:\Users\parkd\MyScripts\raw_data\Coronavirus 03-25 to 04-26 2020.csv')
-df_f = pd.concat([df_i, rona], axis=0, ignore_index=True)
-df_f['Last_Update'] = pd.to_datetime(df_f['Last_Update'])
-df_f = df_f.set_index('Last_Update')
-
-# Data Analysis: /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\
-ny = df_f[df_f['Province_State'] == 'New York']
+# =============================================================================
+# df_i = pd.read_csv(r'C:\Users\parkd\MyScripts\raw_data\Coronavirus 03-25 to 04-26 2020.csv')
+# df_f = pd.concat([df_i, rona], axis=0, ignore_index=True)
+# df_f['Last_Update'] = pd.to_datetime(df_f['Last_Update'])
+# df_f = df_f.set_index('Last_Update')
+# 
+# # Data Analysis: /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\
+# ny = df_f[df_f['Province_State'] == 'New York']
+# =============================================================================
 
 
 # MAKE DAILY AUTOMATIC: /\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
