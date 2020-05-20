@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from datetime import date, timedelta, datetime
 import time
 from selenium import webdriver
@@ -9,14 +10,16 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import smtplib, ssl
 from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
+from email.mime.image.multipart import MIMEMultipart
 from io import StringIO
 import re
 import difflib
 
 
 #final_date = '04-25-2020'
-start_date = '05-18-2020'
+#start_date = '02-24-2020'
+start_date = '04-26-2020'
 today = date.today()
 yesterday = today - timedelta(days=1)
 yesterday = yesterday.strftime('%m-%d-%Y')
@@ -59,6 +62,7 @@ def scrape(start_date, final_date, path_to_click):
     
     df = pd.DataFrame(columns=column_names)
 
+    #for dt in get_dates(start_date, final_date):
     for dt in get_dates(start_date, yesterday):
         waiting.until(EC.element_to_be_clickable((By.XPATH, '//*[@title="{}.csv"]'.format(dt)))).click()
         waiting.until(EC.element_to_be_clickable((By.XPATH, path_to_click))).click()
@@ -82,75 +86,115 @@ def scrape(start_date, final_date, path_to_click):
     return df
 
 rona = scrape(start_date, yesterday, '/html/body/div[4]/div/main/div[2]/div/div[3]/div[1]/div[2]/div[1]/a[1]')
-#rona.to_csv('C:/Users/parkd/MyScripts/raw_data/Coronavirus_update {}.csv'.format(final_date), index=False)
+#rona = scrape(start_date, final_date, '/html/body/div[4]/div/main/div[2]/div/div[3]/div[1]/div[2]/div[1]/a[1]')
+rona['Last_Update'] = pd.to_datetime(rona['Last_Update']).dt.date
+rona = rona.set_index('Last_Update')
+rona.to_csv('C:/Users/parkd/MyScripts/raw_data/Coronavirus_update {}.csv'.format(yesterday))
 
 # Setting datetimeindex and only getting unique dates as indices:
 df_i = pd.read_csv(r'C:\Users\parkd\MyScripts\raw_data\Coronavirus_update 04-25-2020.csv')
-df_f = pd.concat([df_i, rona], axis=0, ignore_index=True)
-df_f['Last_Update'] = pd.to_datetime(df_f['Last_Update']).dt.date
-df_f = df_f.set_index('Last_Update')
+rona.reset_index(inplace=True)
+df_f = pd.concat([df_i, rona], axis=0, ignore_index=False)
 
 
 # Data Analysis: /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\
+ny = df_f.loc[df_f['Province_State'] == 'New York']
+ny = ny.set_index('Last_Update')
+data = ny[['Confirmed', 'Deaths', 'Recovered', 'Combined_Key']]
+data.index = pd.to_datetime(data.index)
 
+if data.isnull().values.any():
+    data = data.fillna(0)
+data['Confirmed'] = data['Confirmed'].astype(str).astype(int)
+data['Recovered'] = data['Recovered'].astype(str).astype(int)
+data['Deaths'] = data['Deaths'].astype(str).astype(int)
+data_mean = data.resample('D').mean()
 
 # MAKE DAILY AUTOMATIC: /\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 
 
+# Plot:
+_ = data.plot(figsize=(15,5), subplots=False, title='New York Rona')
+_ = plt.xlabel('Date')
+_ = plt.ylabel('Rona Info')
+plt.savefig(r'C:\Users\parkd\MyScripts\raw_data\Rona.jpg')
+
 # Send Email: /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+def sendit():
+    port = 465
+    sender_email = 'parkercorya@gmail.com'
+#    send_to = ['parkercorya@yahoo.com']
+    send_to = ['jessica.parker0122@gmail.com', 'Lauersdorf.michelle89@gmail.com', 'jpreston017@gmail.com', 'dcp0426@sbcglobal.net', 'parkercorya@yahoo.com']
+    message = MIMEMultipart('alternative')
+    message['Subject'] = '! Corona Virus Update !'
+    message['From'] = sender_email
+    message['To'] = ", ".join(send_to)
+    
+    text = """\
+        Hello friend,
+        I'm emailing you through my python script!!"""
+        
+    html = """\
+        <html>
+            <body>
+                <p>Hello friend,<br>
+                    Here's a link to the current global corona virus status:
+                    <a href="https://www.worldometers.info/coronavirus/">Corona Virus Info</a>
+                    <br>
+                    <hr>
+                </p>
+                <img src="https://media.giphy.com/media/Lq7TFOIexfjgkCsupk/giphy.gif" alt="gif failed to be shown">
+            </body>
+        </html>"""
+    
+    # Turn these into plain/html MIMEText objects
+    part1 = MIMEText(text, 'plain')
+    part2 = MIMEText(html, 'html')
+    # The email client will try to render the last part first:
+    message.attach(part1)
+    message.attach(part2)
+    
+    img = open(r'C:\Users\parkd\MyScripts\raw_data\Rona.jpg', 'rb')
+    msg_image = MIMEImage(img.read())
+    img.close()
+    msg_image.add_header('Content-ID', '<image1>')
+    message.attach(msg_image)    
+
+    password = 'zeuspoyfciserrpu'
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL('smtp.gmail.com', port=port, context=context) as server:
+        server.login(sender_email, password)
+        server.sendmail(sender_email, send_to, message.as_string())
+        
 # =============================================================================
-# def sendit():
-#     port = 465
-#     sender_email = 'parkercorya@gmail.com'
-#     send_to = ['parkdaddy34@gmail.com', 'parkercorya@yahoo.com']
-# #    receiver_email = ['jessica.parker0122@gmail.com', 'Lauersdorf.michelle89@gmail.com', 'jpreston017@gmail.com']
-#     message = MIMEMultipart('alternative')
-#     message['Subject'] = '! Corona Virus Update !'
-#     message['From'] = sender_email
-#     message['To'] = ", ".join(send_to)
-#     
-#     text = """\
-#         Hello Cunt,
-#         I'm emailing you through my python script!!"""
-#         
-#     html = """\
-#         <html>
-#             <body>
-#                 <p>Hello Cunt,<br>
-#                     Here's a link to the current global corona virus status:
-#                     <a href="https://www.worldometers.info/coronavirus/">Corona Virus Info</a>
-#                 </p>
-#                 <img src="https://media.giphy.com/media/Lq7TFOIexfjgkCsupk/giphy.gif" alt="gif failed to be shown">
-#             </body>
-#         </html>
-#         """
-#     
-#     # Turn these into plain/html MIMEText objects
-#     part1 = MIMEText(text, 'plain')
-#     part2 = MIMEText(html, 'html')
-#     # The email client will try to render the last part first:
-#     message.attach(part1)
-#     message.attach(part2)
-# 
-# 
-#     password = 'rqlxrhcqpmsjpbfr'
-#     context = ssl.create_default_context()
-#     with smtplib.SMTP_SSL('smtp.gmail.com', port=port, context=context) as server:
-#         server.login('parkercorya@gmail.com', password)
-# 
 # def send_time(time_to_send):
 #     time.sleep(time_to_send.timestamp() - time.time())
 #     sendit()
 #     print('Your email has been sent...')
 # 
-# initial_time = dt.datetime(2020, 3, 30, 11, 25)
-# periodicity = dt.timedelta(days=1)
+# initial_time = pd.to_datetime(today)
+# periodicity = timedelta(days=1)
 # 
 # time_to_send = initial_time
 # while True:
 #     send_time(time_to_send)
 #     time_to_send = initial_time + periodicity
+# 
 # =============================================================================
-
-
+# =============================================================================
+#     file = r'C:\Users\parkd\MyScripts\raw_data\Rona.jpg'
+#     
+#     with open(file, 'rb') as attachment:
+#         part = MIMEBase('application', 'octet-stream')
+#         part.set_payload(attachment.read())
+#         
+#     encoders.encode_base64(part)
+#     
+#     part.add_header(
+#         "Content-Dispostion",
+#         f"attachment; filename={file}",
+#     )
+#     
+#     message.attach(part)
+# =============================================================================
 #/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
