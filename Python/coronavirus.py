@@ -9,9 +9,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import smtplib, ssl
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
-from email.mime.image.multipart import MIMEMultipart
 from io import StringIO
 import re
 import difflib
@@ -21,6 +21,7 @@ import difflib
 #start_date = '02-24-2020'
 start_date = '04-26-2020'
 today = date.today()
+todaystr = today.strftime('%m-%d-%Y')
 yesterday = today - timedelta(days=1)
 yesterday = yesterday.strftime('%m-%d-%Y')
 
@@ -44,11 +45,28 @@ def replace_columns(df, new_columns):
                 #print('Newcol ', newcol)
                 df.columns.values[k] = newcol
                 k += 1
-
-options = Options()
-options.add_argument("--start-maximized")
-options.headless = True
-assert options.headless
+                
+def get_state_data(df, state):
+    df = df.loc[df['Province_State'] == state]
+    data = df[['Confirmed', 'Deaths', 'Recovered', 'Combined_Key']]
+    
+    if data.isnull().values.any():
+        data = data.fillna(0)
+    data['Confirmed'] = data['Confirmed'].astype(str).astype(int)
+    data['Recovered'] = data['Recovered'].astype(str).astype(int)
+    data['Deaths'] = data['Deaths'].astype(str).astype(int)
+    
+    _ = data.plot(figsize=(15,5), subplots=False, title= state + ' ' + 'Rona')
+    _ = plt.xlabel('Date')
+    _ = plt.ylabel('Infected')
+    plt.savefig(r'C:\Users\parkd\MyScripts\raw_data\Rona{}.jpg'.format(todaystr+' '+state))
+    return data
+    # Latest Data: =====================================================================>>>>>>>>>>>>>>>>>>>>>>>>>> WORK ON THIS!!
+# =============================================================================
+#     yester = datetime.strptime(yesterday, '%m-%d-%Y')
+#     yester = yester.date()
+#     current_df = data[]
+# =============================================================================
 
 column_names = ['FIPS','Admin2','Province_State','Country_Region','Last_Update','Lat','Long_','Confirmed','Deaths','Recovered','Active','Combined_Key']
 
@@ -85,46 +103,48 @@ def scrape(start_date, final_date, path_to_click):
 
     return df
 
+options = Options()
+options.add_argument("--start-maximized")
+options.headless = True
+assert options.headless
+
 rona = scrape(start_date, yesterday, '/html/body/div[4]/div/main/div[2]/div/div[3]/div[1]/div[2]/div[1]/a[1]')
-#rona = scrape(start_date, final_date, '/html/body/div[4]/div/main/div[2]/div/div[3]/div[1]/div[2]/div[1]/a[1]')
-rona['Last_Update'] = pd.to_datetime(rona['Last_Update']).dt.date
+#rona.to_csv('C:/Users/parkd/MyScripts/raw_data/Coronavirus_update {}.csv'.format(yesterday))
+
+# Set datetimeindex:
+#rona['Last_Update'] = pd.to_datetime(rona['Last_Update']).dt.date  WHY?????????????///
+
 rona = rona.set_index('Last_Update')
-rona.to_csv('C:/Users/parkd/MyScripts/raw_data/Coronavirus_update {}.csv'.format(yesterday))
-
-# Setting datetimeindex and only getting unique dates as indices:
-df_i = pd.read_csv(r'C:\Users\parkd\MyScripts\raw_data\Coronavirus_update 04-25-2020.csv')
 rona.reset_index(inplace=True)
-df_f = pd.concat([df_i, rona], axis=0, ignore_index=False)
+df_i = pd.read_csv(r'C:\Users\parkd\MyScripts\raw_data\Coronavirus_update 04-25-2020.csv')
+world = pd.concat([df_i, rona], axis=0, ignore_index=True)
+world['Last_Update'] = pd.to_datetime(world['Last_Update'])#.dt.date
+world = world.set_index('Last_Update')
+world.index = pd.to_datetime(world.index)
 
+#united_states = world.loc[world['Country_Region'] == 'US']
 
-# Data Analysis: /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\
-ny = df_f.loc[df_f['Province_State'] == 'New York']
-ny = ny.set_index('Last_Update')
-data = ny[['Confirmed', 'Deaths', 'Recovered', 'Combined_Key']]
-data.index = pd.to_datetime(data.index)
-
-if data.isnull().values.any():
-    data = data.fillna(0)
-data['Confirmed'] = data['Confirmed'].astype(str).astype(int)
-data['Recovered'] = data['Recovered'].astype(str).astype(int)
-data['Deaths'] = data['Deaths'].astype(str).astype(int)
-data_mean = data.resample('D').mean()
-
-# MAKE DAILY AUTOMATIC: /\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-
-
-# Plot:
-_ = data.plot(figsize=(15,5), subplots=False, title='New York Rona')
-_ = plt.xlabel('Date')
-_ = plt.ylabel('Rona Info')
-plt.savefig(r'C:\Users\parkd\MyScripts\raw_data\Rona.jpg')
+# Get Data:
+# =============================================================================
+# ny = get_state_data(world, 'New York')
+# ca = get_state_data(world, 'California')
+# tx = get_state_data(world, 'Texas')
+# =============================================================================
 
 # Send Email: /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-def sendit():
+def sendit(state):
     port = 465
     sender_email = 'parkercorya@gmail.com'
-#    send_to = ['parkercorya@yahoo.com']
-    send_to = ['jessica.parker0122@gmail.com', 'Lauersdorf.michelle89@gmail.com', 'jpreston017@gmail.com', 'dcp0426@sbcglobal.net', 'parkercorya@yahoo.com']
+     #'lparkerjr@yahoo.com', 
+    if state == 'California':
+        send_to = ['dcp0426@sbcglobal.net','parkercorya@yahoo.com']
+        
+    elif state == "Texas":
+        send_to = ['Lauersdorf.michelle89@gmail.com', 'parkercorya@yahoo.com']
+        
+    elif state == 'New York':
+        send_to = ['sfellows@sjfc.edu', 'jessica.parker0122@gmail.com','jpreston017@gmail.com', 'parkercorya@yahoo.com']
+        
     message = MIMEMultipart('alternative')
     message['Subject'] = '! Corona Virus Update !'
     message['From'] = sender_email
@@ -154,17 +174,28 @@ def sendit():
     message.attach(part1)
     message.attach(part2)
     
-    img = open(r'C:\Users\parkd\MyScripts\raw_data\Rona.jpg', 'rb')
+    # DataFrame:
+    get_state_data(world, state)
+    
+    img = open(r'C:\Users\parkd\MyScripts\raw_data\Rona{}.jpg'.format(todaystr+' '+state), 'rb')
     msg_image = MIMEImage(img.read())
     img.close()
     msg_image.add_header('Content-ID', '<image1>')
     message.attach(msg_image)    
-
-    password = 'zeuspoyfciserrpu'
+    
+    doc = open(r'C:\Users\parkd\MyScripts\Python\Notes.txt')
+    password = doc.readline()
+    password = password[:-1]
+    doc.close()
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL('smtp.gmail.com', port=port, context=context) as server:
         server.login(sender_email, password)
         server.sendmail(sender_email, send_to, message.as_string())
+        
+        
+sendit('New York')
+sendit('Texas')
+sendit('California')
         
 # =============================================================================
 # def send_time(time_to_send):
