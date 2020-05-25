@@ -50,9 +50,9 @@ def setup():
     
 def draw():
     global xscl, yscls
-    background(255)
+    background(0)
     translate(width/2, height/2)
-    grid(xscl, yscl)
+#    grid(xscl, yscl)
 #    ang = map(mouseX,0,width,0,TWO_PI)
 #    rot_matrix = [[cos(ang),-sin(ang)],[sin(ang),cos(ang)]]
     rot = map(mouseX, 0, width, 0, TWO_PI)
