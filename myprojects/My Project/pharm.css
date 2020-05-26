@@ -15,6 +15,15 @@ a:hover {
 h1, h2, h3, h4, h5, h6, .font-primary {
   font-family: "Roboto", sans-serif;
 }
+#hyde-lols {
+    width: 160px;
+    height: 160px;
+    background: url("../Images/TheFellow.jpg") no-repeat;
+}
+
+#hyde-lols:hover {
+    background: url("../Images/shawniffer.jpg") no-repeat;
+}
 
 .back-to-top {
   position: fixed;
