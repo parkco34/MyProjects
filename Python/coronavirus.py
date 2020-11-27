@@ -28,8 +28,8 @@ from selenium.webdriver.common.action_chains import ActionChains
 # Commenting: ctrl + /
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 # final_date = '04-22-2020'
-# start_date = '01-22-2020'
-start_date = '04-23-2020'
+start_date = '01-22-2020'
+# start_date = '04-23-2020'
 today = date.today()
 todaystr = today.strftime('%m-%d-%Y')
 yesterday = today - timedelta(days=1)
@@ -149,19 +149,16 @@ def scrape(path_to_click):
             df2 = pd.read_csv(raw_data)
             replace_columns(df2, new_columns)
             df2['Last_Update'] = pd.to_datetime(df2['Last_Update'])
-            print(df2['Last_Update'])
-            print(dt)
             df = pd.concat([df, df2], axis=0, ignore_index=True)
 
         else:
             df1 = pd.read_csv(raw_data)
             replace_columns(df1, new_columns)
             df1['Last_Update'] = pd.to_datetime(df1['Last_Update'])
-            print(dt + '===========================================')
             df = pd.concat([df, df1], axis=0, ignore_index=True)
 
         time.sleep(.5)
-        print(dt)
+        # print(dt)
         driver.back()
         time.sleep(.5)
         driver.back()
@@ -185,18 +182,21 @@ consolidate_columns(rona, df_i)
 rona.to_csv(r'C:\Users\cparker\Desktop\PYTHON\Proj\rona{}.csv'.format(yesterday))
 # }}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}
 
-world = pd.concat([df_i, rona], axis=0, ignore_index=True)
-world['Last_Update'] = pd.to_datetime(world['Last_Update'])  # .dt.date
-world = world.set_index('Last_Update')
-world.index = pd.to_datetime(world.index)
-united_states = world.loc[world['Country_Region'] == 'US']
+# world = pd.concat([df_i, rona], axis=0, ignore_index=True)
+# world['Last_Update'] = pd.to_datetime(world['Last_Update'])  # .dt.date
+# world = world.set_index('Last_Update')
+# world.index = pd.to_datetime(world.index)
+# united_states = world.loc[world['Country_Region'] == 'US']
+
+united_states = rona.loc[rona['Country_Region'] == 'US']
+
 # Get Data:
 # =============================================================================
-ny = get_state_data(world, 'New York')
-ca = get_state_data(world, 'California')
-tx = get_state_data(world, 'Texas')
-az = get_state_data(world, 'Arizona')
-wash = get_state_data(world, 'Washington')
+ny = get_state_data(rona, 'New York')
+ca = get_state_data(rona, 'California')
+tx = get_state_data(rona, 'Texas')
+az = get_state_data(rona, 'Arizona')
+wash = get_state_data(rona, 'Washington')
 # =============================================================================
 # Send Email: /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 # def send_it(state):
