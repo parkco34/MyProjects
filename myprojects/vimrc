@@ -1,0 +1,165 @@
+
+set nocompatible
+filetype off
+set number
+set wrap
+set background=dark
+syntax on
+
+" set runtime path to include Vundle and initialize
+set rtp+=~/.vim/bundle/Vundle.vim
+call vundle#begin()
+
+" key maps:
+" <C-o> = ctrl-o
+" <C-o><C-r> = ctrl-o + ctrl-r = !dotnet run
+
+map <C-o> :NERDTreeToggle<CR> 
+inoremap <expr> <Tab> pumvisible() ? '<C-n>' :
+\ getline('.')[col('.')-2] =~# '[[:alnum:].-_#$]' ? '<C-x><C-o>' : '<Tab>'
+nnoremap <C-o><C-u> :OmniSharpFindUsages<CR>
+nnoremap <C-o><C-d> :OmniSharpGotoDefinition<CR>
+nnoremap <C-o><C-d><C-p> :OmniSharpPreviewDefinition<CR>
+nnoremap <C-o><C-r> :!dotnet run
+imap <C-J> <esc>a<Plug>snipMateNextOrTrigger
+smap <C-J> <Plug>snipMateNextOrTrigger
+nnoremap <F12>f :exe ':silent !firefox %'<CR>
+nnoremap <F12>c :exe ':silent !chromium-browser %'<CR>
+nnoremap <F12>o :exe ':silent !opera %'<CR>
+autocmd Filetype css setlocal tabstop=2
+autocmd Filetype javascript setlocal tabstop=2 sts=2
+colorscheme vim-framer-syntax
+set splitbelow
+set splitright
+
+" For commenting JSX in React:
+autocmd FileType javascript.jsx setlocal commentstring={/*\ %s\ */}
+
+autocmd FileType python map <buffer> <F9> :w<CR>:exec '!python3' shellescape(@%, 1)<CR>
+autocmd FileType python imap <buffer> <F9> <esc>:w<CR>:exec '!python3' shellescape(@%, 1)<CR>
+
+"move to the next ALE warning / error
+nnoremap ]r :ALENextWrap<CR>    
+"move to the previous ALE warning / error
+nnoremap [r :ALEPreviousWrap<CR> 
+set sw=4
+set smarttab
+set cindent
+
+source ~/vcomments.vim
+map<C-a> :call Comment()<CR>
+map<C-b> :call Uncomment()<CR>
+"split navigations
+nnoremap <C-J> <C-W><C-J>
+nnoremap <C-K> <C-W><C-K>
+nnoremap <C-L> <C-W><C-L>
+nnoremap <C-H> <C-W><C-H>
+" Enable folding
+set foldmethod=indent
+set foldlevel=99
+" you have to type za to fold (and unfold)
+" Enable folding with the spacebar
+nnoremap <space> za
+
+let g:ycm_global_ycm_extra_conf = '~/.vim/bundle/YouCompleteMe/.ycm_extra_conf.py'
+let g:ale_echo_msg_error_str = 'E'
+let g:ale_echo_msg_warning_str = 'W'
+let g:ale_linters = {
+\   'python': ['flake8', 'pylint'],
+\   'javascript': ['eslint'],
+\   'vue': ['eslint']
+\}
+let g:ale_fixers = {
+  \    'javascript': ['eslint'],
+  \    'typescript': ['prettier', 'tslint'],
+  \    'vue': ['eslint'],
+  \    'scss': ['prettier'],
+  \    'html': ['prettier'],
+  \    'reason': ['refmt']
+\}
+let g:ale_fix_on_save = 1
+let g:ale_fix_on_save = 1
+let g:user_emmet_leader_key=','
+let g:SimpylFold_docstring_preview=1
+
+au BufNewFile,BufRead *.py
+    \ set tabstop=4 |
+    \ set softtabstop=4 |
+    \ set shiftwidth=4 |
+    \ set textwidth=79 |
+    \ set expandtab |
+    \ set autoindent |
+    \ set fileformat=unix
+
+au BufNewFile,BufRead *.js, *.html, *.css, *.tex
+    \ setlocal tabstop=2 |
+    \ setlocal softtabstop=2 |
+    \ setlocal shiftwidth=2 |
+
+let g:ycm_autoclose_preview_window_after_completion=1
+map <leader>g  :YcmCompleter GoToDefinitionElseDeclaration<CR>
+let python_highlight_all=1
+syntax on
+
+let NERDTreeIgnore=['\.pyc$', '\~$'] "ignore files in NERDTree
+
+"dbtext for mssql-server database
+let g:dbext_default_profile_TestDB = 'type=SQLSRV: user=SA:passwd=ImaB3@$t:host=localhost:dbname=TestDB'
+
+"if has('gui_running')
+"  set background=dark
+ " colorscheme solarized
+"else
+ " colorscheme zenburn
+"endif
+
+"call togglebg#map("<F5>")
+
+" let Vundle manage Vundle:
+Plugin 'pangloss/vim-javascript'
+Plugin 'gmarik/Vundle.vim'
+Plugin 'scrooloose/nerdtree'
+Plugin 'OmniSharp/omnisharp-vim'
+Plugin 'RRethy/vim-illuminate'
+Plugin 'inside/vim-search-pulse'
+Plugin 'vim-airline/vim-airline'
+Plugin 'flazz/vim-colorschemes'
+Plugin 'balanceiskey/vim-framer-syntax'
+Plugin 'tpope/vim-dispatch'
+Plugin 'vim-syntastic/syntastic'
+Plugin 'MarcWeber/vim-addon-mw-utils'
+Plugin 'tomtom/tlib_vim'
+Plugin 'garbas/vim-snipmate'
+Plugin 'grvcoelho/vim-javascript-snippets'
+Plugin 'w0rp/ale'
+Plugin 'mattn/emmet-vim'
+Plugin 'Valloric/YouCompleteMe'
+Plugin 'tpope/vim-sensible'
+Plugin 'othree/yajs.vim'
+Plugin 'mhartington/oceanic-next'
+Plugin 'maxmellon/vim-jsx-pretty'
+Plugin 'jiangmiao/auto-pairs'
+Plugin 'tmhedberg/SimpylFold'
+Plugin 'vim-scripts/indentpython.vim'
+Plugin 'jnurmine/Zenburn'
+Plugin 'altercation/vim-colors-solarized'
+Plugin 'jistr/vim-nerdtree-tabs'
+Plugin 'kien/ctrlp.vim'
+Plugin 'tpope/vim-fugitive'
+Plugin 'Lokaltog/powerline', {'rtp': 'powerline/bindings/vim/'}
+Plugin 'hail2u/vim-css3-syntax'
+"Plugin 'dkarter/bullets.vim'
+
+" add all your plugins here (note oldef versions of Vundle used Bundle instead of Plugin):
+
+
+" All plugins must be added before the following:
+call vundle#end()
+au FileType typescript setlocal formatprg=prettier\ — parser\ typescript
+au FileType javascript setlocal formatprg=prettier
+au FileType javascript.jsx setlocal formatprg=prettier
+au FileType typescript setlocal formatprg=prettier\ --parser\ typescript
+au FileType html setlocal formatprg=js-beautify\ --type\ html
+au FileType scss setlocal formatprg=prettier\ --parser\ css
+au FileType css setlocal formatprg=prettier\ --parser\ css
+filetype plugin indent on
