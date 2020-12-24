@@ -1,0 +1,51 @@
+# Data from KAGGLE Covid 19 dataset: https://www.kaggle.com/allen-institute-for-ai/CORD-19-research-challenge
+import pandas as pd
+import numpy as np
+import seaborn as sns
+
+pd.options.mode.chained_assignment = None
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.max_rows', 200)
+pd.set_option('display.width', 1000)
+
+# Always specify data types:
+df = pd.read_csv(r'C:\Users\cparker\Desktop\Excel_Stuff\metadata.csv', usecols=['cord_uid', 'sha', 'source_x', 'title', 'doi', 'pmcid', 'pubmed_id', 'license', 'abstract', 'publish_time',
+                    'authors', 'journal', 'who_covidence_id', 'arxiv_id', 'pdf_json_files', 'pmc_json_files', 's2_id'],
+                 dtype={'cord_uid': object, 'sha': object, 'title': object, 'doi': object, 'pmcid': object, 'who_covidence_id': object, 'pubmed_id': object, 'arxiv_id': object,
+                        'pdf_json_files': object, 's2_id': float, 'source_x': object, 'license': object, 'abstract': object, 'publish_time': object, 'authors': object, 'journal': object, 'pmc_json_files': object})
+
+# Data Cleaning: /\/\/\/\/\/\/\/\\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\\/\/\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\\/\/\/\/\/\/\/\/\/\/\/\/
+
+# Missing data =============================================
+
+# 1) Heatmap:
+cols = df.columns
+colors = ['#000099', '#ffff00'] # Blue, Yellow
+# 2) Missing data is yellow
+sns.heatmap(df[cols].isnull(), cmap=sns.color_palette(colors))
+
+# Percentage List of missing data:
+for i in cols:
+    pct_missing = np.mean(df[i].isnull())
+    print('{} - {}%'.format(i, round(pct_missing*100)))
+
+# 3) Missing data Histogram:
+
+# Create missing indicator:
+for i in cols:
+    missing = df[i].isnull()
+    num_missing = np.sum(missing)
+
+    if num_missing > 0:
+        print('Created missing indicator for: {}'.forma(i))
+        df['{}_ismissing'.format(i)] = missing
+
+# Plot histogram:
+ismissing_cols = [col for col in df]
+
+# Normalization/Standardization:
+
+# Principal Component Analysis:
+
+# Test set vs. Training sets:
+
