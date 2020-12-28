@@ -23,13 +23,26 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.action_chains import ActionChains
 
+def duplicated_varnames(df):
+    """Return a dict of all variable names that
+    are duplicated in a given dataframe."""
+    repeat_dict = {}
+    var_list = list(df) # list of varnames as strings
+    for varname in var_list:
+        # make a list of all instances of that varname
+        test_list = [v for v in var_list if v == varname]
+        # if more than one instance, report duplications in repeat_dict
+        if len(test_list) > 1:
+            repeat_dict[varname] = len(test_list)
+    return repeat_dict
+
 # Pycharm keyboard help: /\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/
 # run code: alt+shift+e
 # Commenting: ctrl + /
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
-# final_date = '04-22-2020'
-start_date = '01-22-2020'
-# start_date = '04-23-2020'
+final_date = '07-22-2020'
+#start_date = '01-22-2020'
+start_date = '04-22-2020'
 today = date.today()
 todaystr = today.strftime('%m-%d-%Y')
 yesterday = today - timedelta(days=1)
@@ -38,10 +51,10 @@ yesterday = yesterday.strftime('%m-%d-%Y')
 
 def get_dates(start_date):
     date_i = datetime.strptime(start_date, '%m-%d-%Y')
-    dates = pd.date_range(date_i, today - timedelta(days=1), freq='d')
-    dates = pd.date_range(start_date, yesterday, freq='d')
+    # dates = pd.date_range(date_i, today - timedelta(days=1), freq='d')
+    # dates = pd.date_range(start_date, yesterday, freq='d')
     # Earlier Dates
-    # dates = pd.date_range(start_date, final_date, freq='d')
+    dates = pd.date_range(start_date, final_date, freq='d')
     dates = dates.strftime('%m-%d-%Y')
     dates = dates.tolist()
     return dates
@@ -87,7 +100,9 @@ assert options.headless
 
 def get_new_columns(end_date):
     driver = webdriver.Firefox(executable_path=ff_driver, options=options)
+    time.sleep(.8)
     driver.get(site)
+    time.sleep(.5)
 
     # Ignore irrelevant exceptions
     ignored_exceptions = (NoSuchElementException, StaleElementReferenceException)
@@ -97,7 +112,7 @@ def get_new_columns(end_date):
     waiting.until(EC.element_to_be_clickable((By.XPATH, '//*[@title="{}.csv"]'.format(end_date)))).click()
     waiting.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="raw-url"]'))).click()
 
-    time.sleep(.5)
+    time.sleep(.8)
     # Store raw data in variable
     raw = waiting.until(EC.element_to_be_clickable((By.XPATH, '/html/body/pre'))).text
     raw_data = StringIO(raw)
@@ -121,7 +136,7 @@ def consolidate_columns(new_dframe, old_dframe):
 
 def scrape(path_to_click):
     # Get latest columns
-    new_columns = get_new_columns(yesterday)
+    new_columns = get_new_columns(final_date)
 
     driver = webdriver.Firefox(executable_path=ff_driver, options=options)
     driver.get(site)
@@ -132,6 +147,7 @@ def scrape(path_to_click):
     df = pd.DataFrame([], columns=new_columns)
 
     for dt in get_dates(start_date):
+        print(dt)
         try:
             waiting.until(EC.element_to_be_clickable((By.XPATH, '//*[@title="{}.csv"]'.format(dt)))).click()
             time.sleep(1.5)
@@ -146,13 +162,15 @@ def scrape(path_to_click):
         raw_data = StringIO(raw)
 
         if dt != start_date:
-            df2 = pd.read_csv(raw_data)
+            df2 = pd.read_csv(raw_data, names=new_columns)
             replace_columns(df2, new_columns)
+            dup_dict = duplicated_varnames(df2)
+            print(dup_dict)
             df2['Last_Update'] = pd.to_datetime(df2['Last_Update'])
             df = pd.concat([df, df2], axis=0, ignore_index=True)
 
         else:
-            df1 = pd.read_csv(raw_data)
+            df1 = pd.read_csv(raw_data, names=new_columns)
             replace_columns(df1, new_columns)
             df1['Last_Update'] = pd.to_datetime(df1['Last_Update'])
             df = pd.concat([df, df1], axis=0, ignore_index=True)
@@ -174,19 +192,19 @@ rona['Last_Update'] = pd.to_datetime(rona['Last_Update']).dt.date
 rona = rona.set_index('Last_Update')
 
 # Get old dataframe
-df_i = pd.read_csv(r'C:\Users\cparker\Desktop\PYTHON\Proj\rona04-22-2020.csv')
+df_i = pd.read_csv(r'C:\Users\cparker\Desktop\PYTHON\rona04-22-2020.csv', low_memory=False)
 # Update the columns for our new data
 consolidate_columns(rona, df_i)
 
 # }}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}
-rona.to_csv(r'C:\Users\cparker\Desktop\PYTHON\Proj\rona{}.csv'.format(yesterday))
+rona.to_csv(r'C:\Users\cparker\Desktop\PYTHON\rona{}.csv'.format(final_date))
 # }}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}
 
-# world = pd.concat([df_i, rona], axis=0, ignore_index=True)
-# world['Last_Update'] = pd.to_datetime(world['Last_Update'])  # .dt.date
-# world = world.set_index('Last_Update')
-# world.index = pd.to_datetime(world.index)
-# united_states = world.loc[world['Country_Region'] == 'US']
+world = pd.concat([df_i, rona], axis=0, ignore_index=True)
+world['Last_Update'] = pd.to_datetime(world['Last_Update'])  # .dt.date
+world = world.set_index('Last_Update')
+world.index = pd.to_datetime(world.index)
+united_states = world.loc[world['Country_Region'] == 'US']
 
 united_states = rona.loc[rona['Country_Region'] == 'US']
 
