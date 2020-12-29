@@ -23,24 +23,11 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.action_chains import ActionChains
 
-def duplicated_varnames(df):
-    """Return a dict of all variable names that
-    are duplicated in a given dataframe."""
-    repeat_dict = {}
-    var_list = list(df) # list of varnames as strings
-    for varname in var_list:
-        # make a list of all instances of that varname
-        test_list = [v for v in var_list if v == varname]
-        # if more than one instance, report duplications in repeat_dict
-        if len(test_list) > 1:
-            repeat_dict[varname] = len(test_list)
-    return repeat_dict
-
 # Pycharm keyboard help: /\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/\/\/\//\/\/\/\/\/\/\/
 # run code: alt+shift+e
 # Commenting: ctrl + /
 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
-final_date = '07-22-2020'
+final_date = '07-17-2020'
 #start_date = '01-22-2020'
 start_date = '04-22-2020'
 today = date.today()
@@ -65,9 +52,25 @@ def replace_columns(df, updated_cols):
     for i in df.columns:
         for j in updated_cols:
             seq = difflib.SequenceMatcher(None, i, j).ratio() * 100
-            if (seq >= 54) & (i != j):
+            print(i)
+            print('==========')
+            print(j)
+            print('==========')
+            print(k)
+            # If the length of the list of new column names has been exceeded, exit loop
+            if k > len(updated_cols):
+                break
+            # If new column name is already in dataframe, ignore it and keep it moving
+            elif j in df.columns:
+                k += 1
+            # If column names aren't the same but almost, replace the current one with the new one
+            elif (seq >= 54) & (i != j):
                 newcol = re.sub(i, j, i)
                 df.columns.values[k] = newcol
+                k += 1
+            # If new column name not in the dataframe at all, insert column at this position with the new column name
+            else:
+                df.insert(loc=k, column=j, value='')
                 k += 1
 
 
@@ -162,21 +165,18 @@ def scrape(path_to_click):
         raw_data = StringIO(raw)
 
         if dt != start_date:
-            df2 = pd.read_csv(raw_data, names=new_columns)
+            df2 = pd.read_csv(raw_data)
             replace_columns(df2, new_columns)
-            dup_dict = duplicated_varnames(df2)
-            print(dup_dict)
             df2['Last_Update'] = pd.to_datetime(df2['Last_Update'])
             df = pd.concat([df, df2], axis=0, ignore_index=True)
 
         else:
-            df1 = pd.read_csv(raw_data, names=new_columns)
+            df1 = pd.read_csv(raw_data)
             replace_columns(df1, new_columns)
             df1['Last_Update'] = pd.to_datetime(df1['Last_Update'])
             df = pd.concat([df, df1], axis=0, ignore_index=True)
 
         time.sleep(.5)
-        # print(dt)
         driver.back()
         time.sleep(.5)
         driver.back()
