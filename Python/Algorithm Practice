@@ -1,0 +1,53 @@
+
+
+# Given an integer, return the integer with reversed digits.
+# Note: The integer could be either positive or negative.
+
+def reverse_int(your_int):
+    x = str(your_int)
+
+    if x[0] == '-':
+        # x[:0:-1] Returns reversed string except for the first character
+        return int('-' + x[:0:-1])
+    else:
+        return int(x[::-1])
+
+reverse_int(12242020)
+
+
+# Multiply all elements in a list:
+def multi_list(integers):
+    product = 1
+    for i in integers:
+        product *= i
+
+    return product
+
+
+# Factorial:
+def factorial(number):
+    numbers = []
+    i = 0
+    while i < number:
+        next_number = number - i
+        numbers.append(next_number)
+        i += 1
+
+    return multi_list(numbers)
+
+
+
+# For a given sentence, return the average word length.
+# Note: Remember to remove punctuation first.
+
+
+# Finding the most frequent item in a list:
+def mode(List):
+    return max(set(List), key=List.count)
+
+
+# Find Median of items in a list:
+thislist = [49, 19, 34, -2, 8, 1456, 87, 99, 50, 59, 53, 13, 64]
+thislist.sort()
+mid = len(thislist) // 2
+median = (thislist[mid] + thislist[~mid]) / 2
