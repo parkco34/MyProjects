@@ -1,3 +1,24 @@
+" Learning Vim the hard way.
+let mapleader=","
+let maplocalleader="\\""
+"echom "Fake it til you make it, you son of a bitch..."
+"noremap <leader> - ddp
+"noremap <leader> _ ddP
+"inoremap <leader> <c-u> <esc>viwU 
+"nnoremap <leader> <c-u> viwU
+
+" Edit vimrc file
+nnoremap <leader>ev :vsplit $MYVIMRC<CR>
+nnoremap <leader>sv :source $MYVIMRC<CR>
+iabbrev @1 parkercorya@yahoo.com
+iabbrev @@ parkercorya@gmail.com
+iabbrev @2 parkdaddy34@gmail.com
+"nnoremap <leader>" viw<esc>a"<esc>bi"<esc>lel
+"nnoremap <leader>' viw<esc>a'<esc>bi'<esc>lel
+nnoremap L $
+nnoremap H 0
+"inoremap <esc> <nop>
+"inoremap jk <c-c>
 
 set nocompatible
 filetype off
@@ -28,7 +49,7 @@ nnoremap <F12>c :exe ':silent !chromium-browser %'<CR>
 nnoremap <F12>o :exe ':silent !opera %'<CR>
 autocmd Filetype css setlocal tabstop=2
 autocmd Filetype javascript setlocal tabstop=2 sts=2
-colorscheme vim-framer-syntax
+"colorscheme vim-framer-syntax
 set splitbelow
 set splitright
 
@@ -46,7 +67,7 @@ set sw=4
 set smarttab
 set cindent
 
-source ~/vcomments.vim
+"source ~/vcomments.vim
 map<C-a> :call Comment()<CR>
 map<C-b> :call Uncomment()<CR>
 "split navigations
@@ -79,8 +100,8 @@ let g:ale_fixers = {
 \}
 let g:ale_fix_on_save = 1
 let g:ale_fix_on_save = 1
-let g:user_emmet_leader_key=','
-let g:SimpylFold_docstring_preview=1
+"let g:user_emmet_leader_key=','
+"let g:SimpylFold_docstring_preview=1
 
 au BufNewFile,BufRead *.py
     \ set tabstop=4 |
@@ -106,15 +127,6 @@ let NERDTreeIgnore=['\.pyc$', '\~$'] "ignore files in NERDTree
 "dbtext for mssql-server database
 let g:dbext_default_profile_TestDB = 'type=SQLSRV: user=SA:passwd=ImaB3@$t:host=localhost:dbname=TestDB'
 
-"if has('gui_running')
-"  set background=dark
- " colorscheme solarized
-"else
- " colorscheme zenburn
-"endif
-
-"call togglebg#map("<F5>")
-
 " let Vundle manage Vundle:
 Plugin 'pangloss/vim-javascript'
 Plugin 'gmarik/Vundle.vim'
@@ -124,7 +136,7 @@ Plugin 'RRethy/vim-illuminate'
 Plugin 'inside/vim-search-pulse'
 Plugin 'vim-airline/vim-airline'
 Plugin 'flazz/vim-colorschemes'
-Plugin 'balanceiskey/vim-framer-syntax'
+"Plugin 'balanceiskey/vim-framer-syntax'
 Plugin 'tpope/vim-dispatch'
 Plugin 'vim-syntastic/syntastic'
 Plugin 'MarcWeber/vim-addon-mw-utils'
@@ -148,14 +160,9 @@ Plugin 'kien/ctrlp.vim'
 Plugin 'tpope/vim-fugitive'
 Plugin 'Lokaltog/powerline', {'rtp': 'powerline/bindings/vim/'}
 Plugin 'hail2u/vim-css3-syntax'
-"Plugin 'dkarter/bullets.vim'
-
-" add all your plugins here (note oldef versions of Vundle used Bundle instead of Plugin):
-
 
 " All plugins must be added before the following:
 call vundle#end()
-au FileType typescript setlocal formatprg=prettier\ — parser\ typescript
 au FileType javascript setlocal formatprg=prettier
 au FileType javascript.jsx setlocal formatprg=prettier
 au FileType typescript setlocal formatprg=prettier\ --parser\ typescript
@@ -163,3 +170,61 @@ au FileType html setlocal formatprg=js-beautify\ --type\ html
 au FileType scss setlocal formatprg=prettier\ --parser\ css
 au FileType css setlocal formatprg=prettier\ --parser\ css
 filetype plugin indent on
+
+" Vim code I found on stack overflow to redirect python output:
+" Bind F5 to save file if modified and execute python script in a buffer.
+nnoremap <silent> <F5> :call SaveAndExecutePython()<CR>
+vnoremap <silent> <F5> :<C-u>call SaveAndExecutePython()<CR>
+
+function! SaveAndExecutePython()
+    " SOURCE [reusable window]: https://github.com/fatih/vim-go/blob/master/autoload/go/ui.vim
+
+    " save and reload current file
+    silent execute "update | edit"
+
+    " get file path of current file
+    let s:current_buffer_file_path = expand("%")
+
+    let s:output_buffer_name = "Python"
+    let s:output_buffer_filetype = "output"
+
+    " reuse existing buffer window if it exists otherwise create a new one
+    if !exists("s:buf_nr") || !bufexists(s:buf_nr)
+        silent execute 'botright new ' . s:output_buffer_name
+        let s:buf_nr = bufnr('%')
+    elseif bufwinnr(s:buf_nr) == -1
+        silent execute 'botright new'
+        silent execute s:buf_nr . 'buffer'
+    elseif bufwinnr(s:buf_nr) != bufwinnr('%')
+        silent execute bufwinnr(s:buf_nr) . 'wincmd w'
+    endif
+
+    silent execute "setlocal filetype=" . s:output_buffer_filetype
+    setlocal bufhidden=delete
+    setlocal buftype=nofile
+    setlocal noswapfile
+    setlocal nobuflisted
+    setlocal winfixheight
+    setlocal cursorline " make it easy to distinguish
+    setlocal nonumber
+    setlocal norelativenumber
+    setlocal showbreak=""
+
+    " clear the buffer
+    setlocal noreadonly
+    setlocal modifiable
+    %delete _
+
+    " add the console output
+    silent execute ".!python " . shellescape(s:current_buffer_file_path, 1)
+
+    " resize window to content length
+    " Note: This is annoying because if you print a lot of lines then your code buffer is forced to a height of one line every time you run this function.
+    "       However without this line the buffer starts off as a default size and if you resize the buffer then it keeps that custom size after repeated runs of this function.
+    "       But if you close the output buffer then it returns to using the default size when its recreated
+    "execute 'resize' . line('$')
+
+    " make the buffer non modifiable
+    setlocal readonly
+    setlocal nomodifiable
+endfunction
