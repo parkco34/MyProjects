@@ -1,15 +1,19 @@
 import pandas as pd
 from datetime import datetime
-import tkinter as tk
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+from sklearn.preprocessing import minmax_scale
+from skcriteria import Data, MIN, MAX
+from skcriteria.madm import simple
 
+# Expands data visibility in python terminal
 pd.options.mode.chained_assignment = None
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.max_rows', 200)
 pd.set_option('display.width', 600)
 
-# locations = 'FARMINGTON', 'MAIN', 'HENRIETTA', 'GREECE', 'ERIE', 'IRONDEQUOIT', 'KENMORE', 'BUFFALO', 'ELMIRA'
-
-# Finds percent of missing values
+# Finds percent of missing values, here if you need to run it in  the Python terminal...
 def missing_values(dataframe):
     percent_missing = dataframe.isnull().sum() * 100 / len(dataframe)
     missing_values_df = pd.DataFrame({'column_name': dataframe.columns,
@@ -17,9 +21,9 @@ def missing_values(dataframe):
     missing_values_df.sort_values('percent_missing', ascending=False, inplace=True)
     return missing_values_df
 
-
 ''' If there's a decimal in the column values, round down and convert to integer, else if something needs to be added 
-to the values a target columns, else if you need to change Int64 type to datetime types... '''
+to the values of targeted columns, else if you need to change Int64 type to datetime types... '''
+
 def modify_column_values(dataframe, *column_list, add_thing=None, floater=False, time_change=False):
     if floater:
         # If type FLOAT, round down and change type to STRING
@@ -28,13 +32,13 @@ def modify_column_values(dataframe, *column_list, add_thing=None, floater=False,
                 dataframe = dataframe[dataframe[na].notna()]
                 dataframe.loc[:, na] = dataframe[na].astype(int)
                 dataframe.loc[:, na] = dataframe[na].astype(str) + add_thing
-                dataframe[na] = dataframe[na].apply(lambda _: datetime.strptime(_, '%Y-%m-%d').date())
+                dataframe[na] = dataframe[na].apply(lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
 
             else:
                 dataframe = dataframe[dataframe[na].notna()]
                 dataframe.loc[:, na] = dataframe[na].astype(int)
                 dataframe.loc[:, na] = dataframe[na].astype(str) + add_thing
-                dataframe[na] = dataframe[na].apply(lambda _: datetime.strptime(_, '%Y-%m-%d').date())
+                dataframe[na] = dataframe[na].apply(lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
 
         return dataframe
 
@@ -49,112 +53,74 @@ def replace_column_values(dataframe, column_name, *new_values):
     for val in new_values:
         dataframe.loc[dataframe[column_name].str.contains(val, na=False), column_name] = val
 
-df = pd.read_csv(r'C:\Users\cparker\Desktop\Copy of REID DDG BOS SHOES .csv',
-                 usecols=['Location', 'Part', 'WD COST', 'Last 12 Mo Sales',
-       'Inv Demand YTD+LY', 'Local Experian VIO', 'Local Vista Demand',
-       'Alliance DW Region', 'Blended Coverage', 'Tool Action', 'Manual', 'Min Model Year', 'Max Model Year'])
 
-# Dealing with missing values
+def reverse_blend(dataframe):
+    dframe = dataframe.copy()
+    dframe['Blended Coverage'] = dframe['Blended Coverage'].apply(lambda x: (-1 * x + 100) / 100)
+
+    return dframe
+
+
+''' Normalizing attributes, the closer to one the better the ranking, the closer to zero, the worse the ranking '''
+def min_max_scaling(dframe, *columns):
+    colz = list(columns)
+    df_norm = dframe.copy()
+
+    for col in colz:
+        df_norm[col] = (df_norm[col] - df_norm[col].min()) / (df_norm[col].max() - df_norm[col].min())
+
+    return df_norm
+
+# Obtain DataFrame and correct for missing values
+df = pd.read_csv(r'C:\Users\cparker\Desktop\Updates\Copy of REID DDG BOS SHOES .csv')
 df['Manual'] = df['Manual'].str.lower().fillna('')
 df[['Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand', 'Alliance DW Region']] = df[['Last 12 Mo Sales',
-                                            'Local Experian VIO', 'Local Vista Demand', 'Alliance DW Region']].fillna(0)
-# Proper Datetimes
+                                                                                                 'Local Experian VIO',
+                                                                                                 'Local Vista Demand',
+                                                                                                 'Alliance DW Region']].fillna(0)
 df = modify_column_values(df, 'Min Model Year', 'Max Model Year', add_thing='-01-01', floater=True)
-# Simplifying the Location column (Categorical Data)
-replace_column_values(df, 'Location', 'FARMINGTON', 'MAIN', 'HENRIETTA', 'GREECE', 'ERIE', 'IRONDEQUOIT', 'KENMORE',
-                      'BUFFALO', 'ELMIRA')
 
+# Reverse Blended Coverage to reflect same "direction of goodness" as the attributes...
+df1 = reverse_blend(df)
 
-# Filter dataframe for desired Blended Coverage
-def blended_coverages(dataframe, min_coverage):
-    dframe = dataframe.loc[dataframe['Blended Coverage'] < min_coverage]
+# filter by location while Normalizing Attributes (min-max-scaling)
+locations = {}
+df_inv = {}
+for loc in df1['Location'].unique():
+    locations[loc] = df1.loc[df1['Location'] == loc]
+    df_inv[loc[13:]] = min_max_scaling(locations[loc], 'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand',
+                                  'Alliance DW Region', 'Blended Coverage')
 
-    return dframe
+# MCDM for all Locations using WSM Algorithm (Weighted Sum Method) /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+for loc in df_inv.keys():
+    dis_frame = df_inv[loc][
+        ['Part', 'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand', 'Alliance DW Region', 'Blended Coverage']]
 
+    criteria_data = Data(
+        dis_frame.iloc[:, 1:],
+        [MAX, MAX, MAX, MAX, MAX],
+        anames=dis_frame['Part'],
+        cnames=dis_frame.columns[1:],
+        weights=[1, 1, 1.25, 1, 1]
+    )
 
-# Filter by Location (in CAPITAL LETTERS) => 'FARMINGTON', 'MAIN', 'HENRIETTA', 'GREECE', 'ERIE', 'IRONDEQUOIT', 'KENMORE', 'BUFFALO', 'ELMIRA'
-def get_location(dataframe, location):
-    dframe = dataframe.loc[dataframe['Location'] == location]
+    dm = simple.WeightedSum(mnorm="sum")
+    dec = dm.decide(criteria_data)
 
-    return dframe
+    # Convert Ranks to Series to insert into Dataframe
+    parts = pd.Series(dec.data.anames, name="Part")
+    ranks = pd.Series(dec.rank_, name="Rank")
+    ranked_df = pd.concat([parts, ranks], axis=1)
 
-# Define Success Parameters
-def metrics(dataframe, vio_min, vista_min, region_min):
-    dframe = dataframe.loc[(dataframe['Local Experian VIO'] >= vio_min) & (dataframe['Local Vista Demand'] >= vista_min) & (dataframe['Alliance DW Region'] >= region_min)]
+    # Obtain Original DataFrame for each Location
+    og_df = df.loc[df['Location'].str.contains(loc)]
 
-    return dframe
+    # Merge rankings onto DataFrame and rearranging columns
+    new_df = og_df.merge(ranked_df, how='inner', on='Part')
+    cols = new_df.columns.to_list()
+    cols = cols[:12] + cols[-1:] + cols[12:-1]
+    new_df = new_df[cols]
 
-
-def get_vehicle_years(dataframe, min_year, max_year):
-    year_min = datetime.strptime(min_year, '%Y-%d-%m').date()
-    year_max = datetime.strptime(max_year, '%Y-%d-%m').date()
-    dframe = dataframe.loc[(dataframe['Min Model Year'] >= year_min) & (dataframe['Max Model Year'] >= year_max)]
-
-    return dframe
-
-
-def main(dataframe):
-    # Criteria 1: Blended Coverage
-    while True:
-
-        try:
-            user = int(input("What's your preferred Blended Coverage Percentage? (Enter an Integer):\n"))
-            if type(user) == int:
-                dframe = blended_coverages(dataframe, user)
-                break
-            print("\nPlease enter a valid input... ( ͡❛ ͜ʖ ͡❛)👎")
-
-        except Exception as e:
-            print(e)
-
-    # Criteria 2: Location
-    while True:
-
-        try:
-            user = input("Please enter the location to filter by: ").upper()
-            if user in ['FARMINGTON', 'MAIN', 'HENRIETTA', 'GREECE', 'ERIE', 'IRONDEQUOIT', 'KENMORE', 'BUFFALO', 'ELMIRA']:
-                dframe = get_location(dataframe, user)
-                break
-            print("\nPlease try again... ( ͡❛ ͜ʖ ͡❛)👎")
-
-        except Exception as e:
-            print(e)
-
-    # Criteria 3: Metrics
-    while True:
-
-        try:
-            user = input("Enter the minimum VIO, Local Vista , and Regional, respectfully. (Enter Integers only, separated by commas): \n")
-            values = list(map(lambda i: int(i), user.split(',')))
-
-            if (type(values[0]) == int) & (type(values[1]) == int) & (type(values[2]) == int):
-                dframe = metrics(dataframe, values[0], values[1], values[2])
-                break
-            print("\nPlease try again... ( ͡❛ ͜ʖ ͡❛)👎")
-
-        except Exception as e:
-            print(e)
-
-    # Criteria 4: Min/Max Model Year
-    while True:
-
-        try:
-            user1 = input("Minimum Model Year? (Format: YYYY): \n")
-            user2 = input("Maximum Model Year? (Format: YYYY): \n")
-            user1 = user1 + '-01-01'
-            user2 = user2 + '-01-01'
-
-            if (type(user1) == str) & (type(user2) == str):
-                dframe = get_vehicle_years(dataframe, user1, user2)
-                break
-            print("\nOops... Something went wrong... ( ͡❛ ͜ʖ ͡❛)👎")
-
-        except Exception as e:
-            print(e)
-
-    return dframe
-
-
-df = main(df)
-
+    # Write to EXCEL file:
+    new_df.to_excel(rf'C:\Users\cparker\Desktop\Updates\{loc}_RANKINGS.xlsx', index=False, engine='openpyxl')
 
