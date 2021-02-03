@@ -1,11 +1,9 @@
+import os
 import pandas as pd
+import win32api
+import pyautogui as auto
+import glob
 from datetime import datetime
-import matplotlib.pyplot as plt
-import numpy as np
-import seaborn as sns
-from sklearn.preprocessing import minmax_scale
-from skcriteria import Data, MIN, MAX
-from skcriteria.madm import simple
 
 # Expands data visibility in python terminal
 pd.options.mode.chained_assignment = None
@@ -13,114 +11,117 @@ pd.set_option('display.max_columns', 500)
 pd.set_option('display.max_rows', 200)
 pd.set_option('display.width', 600)
 
-# Finds percent of missing values, here if you need to run it in  the Python terminal...
-def missing_values(dataframe):
-    percent_missing = dataframe.isnull().sum() * 100 / len(dataframe)
-    missing_values_df = pd.DataFrame({'column_name': dataframe.columns,
-                                      'percent_missing': percent_missing})
-    missing_values_df.sort_values('percent_missing', ascending=False, inplace=True)
-    return missing_values_df
 
-''' If there's a decimal in the column values, round down and convert to integer, else if something needs to be added 
-to the values of targeted columns, else if you need to change Int64 type to datetime types... '''
+class Data:
+    user = os.getlogin()
 
-def modify_column_values(dataframe, *column_list, add_thing=None, floater=False, time_change=False):
-    if floater:
-        # If type FLOAT, round down and change type to STRING
-        for na in dataframe[([*column_list])]:
-            if len([*column_list]) > 1:
-                dataframe = dataframe[dataframe[na].notna()]
-                dataframe.loc[:, na] = dataframe[na].astype(int)
-                dataframe.loc[:, na] = dataframe[na].astype(str) + add_thing
-                dataframe[na] = dataframe[na].apply(lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
+    def __init__(self, file_path=None, data=None):
+        self.file_path = file_path
+        self.data = data
+
+    """ Retrieve raw data from file path and formats it in a DatFrame """
+    def get_file(self):
+        self.file_path = "C:\\Users\\" + user + r"\Desktop\UPDATES"
+
+        try:
+
+            if not os.path.exists(self.file_path):
+                print("Making Directory in: " + self.file_path)
+                auto.alert(f"Creating directory at: {self.file_path}", "CORY WANTS YOU TO KNOW...")
+                os.mkdir(self.file_path)
 
             else:
-                dataframe = dataframe[dataframe[na].notna()]
-                dataframe.loc[:, na] = dataframe[na].astype(int)
-                dataframe.loc[:, na] = dataframe[na].astype(str) + add_thing
-                dataframe[na] = dataframe[na].apply(lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
+                print("Required Directory Exists.")
 
-        return dataframe
+        except TypeError as err:
+            self.file_path = auto.prompt(text="No file path found.\nPlease enter the full file path to your data",
+                                        title="FILE PATH REQUIRED")
 
-    elif time_change:
-        for na in dataframe[([*column_list])]:
-            dataframe[na] = dataframe[na].astype('datetime64[ns]')
-            return dataframe
+        list_of_files = glob.glob(self.file_path + "\\*")
+        # max(iterable, *[, default=obj, key=func])
+        self.file_path = max(list_of_files, key=self.modification_date)
 
+        if self.file_path.endswith('.csv'):
+            self.data = pd.read_csv(self.file_path)
 
-# To replace locations with more concise nomenclature
-def replace_column_values(dataframe, column_name, *new_values):
-    for val in new_values:
-        dataframe.loc[dataframe[column_name].str.contains(val, na=False), column_name] = val
+            return self.data
 
+        elif self.file_path.endswith('.xlsx'):
+            self.data = pd.read_excel(self.file_path)
 
-def reverse_blend(dataframe):
-    dframe = dataframe.copy()
-    dframe['Blended Coverage'] = dframe['Blended Coverage'].apply(lambda x: (-1 * x + 100) / 100)
+            return self.data
 
-    return dframe
+        elif self.file_path.endswith('.txt'):
+            with open(self.file_path, 'a+') as file:
+                self.data = file.read()
 
+                return self.data
 
-''' Normalizing attributes, the closer to one the better the ranking, the closer to zero, the worse the ranking '''
-def min_max_scaling(dframe, *columns):
-    colz = list(columns)
-    df_norm = dframe.copy()
+        else:
+            self.file_path = auto.prompt(text="SOMETHING WENT WRONG...\nPlease enter the full file path of your data",
+                                   title="File Path Required")
 
-    for col in colz:
-        df_norm[col] = (df_norm[col] - df_norm[col].min()) / (df_norm[col].max() - df_norm[col].min())
+            if self.file_path.endswith('.csv'):
+                self.data = pd.read_csv(self.file_path)
 
-    return df_norm
+                return
 
-# Obtain DataFrame and correct for missing values
-df = pd.read_csv(r'C:\Users\cparker\Desktop\Updates\Copy of REID DDG BOS SHOES .csv')
-df['Manual'] = df['Manual'].str.lower().fillna('')
-df[['Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand', 'Alliance DW Region']] = df[['Last 12 Mo Sales',
-                                                                                                 'Local Experian VIO',
-                                                                                                 'Local Vista Demand',
-                                                                                                 'Alliance DW Region']].fillna(0)
-df = modify_column_values(df, 'Min Model Year', 'Max Model Year', add_thing='-01-01', floater=True)
+            elif self.file_path.endswith('.xlsx'):
+                self.data = pd.read_excel(self.file_path)
+            elif the_pat.endswith('.txt'):
+                with open(self.file_path, 'r') as file:
+                    self.data = file.read()
 
-# Reverse Blended Coverage to reflect same "direction of goodness" as the attributes...
-df1 = reverse_blend(df)
+            else:
+                auto.alert("Losiento...", "ERROR OCCURRED!\nFind Cory and have him solve the problem.")
 
-# filter by location while Normalizing Attributes (min-max-scaling)
-locations = {}
-df_inv = {}
-for loc in df1['Location'].unique():
-    locations[loc] = df1.loc[df1['Location'] == loc]
-    df_inv[loc[13:]] = min_max_scaling(locations[loc], 'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand',
-                                  'Alliance DW Region', 'Blended Coverage')
+    """ Function to get to latest file modified in the directory """
+    @staticmethod
+    def modification_date(file_loc):
+        t = os.path.getmtime(file_loc)
+        return datetime.fromtimestamp(t)
 
-# MCDM for all Locations using WSM Algorithm (Weighted Sum Method) /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
-for loc in df_inv.keys():
-    dis_frame = df_inv[loc][
-        ['Part', 'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand', 'Alliance DW Region', 'Blended Coverage']]
+    def __str__(self):
+        if self.file_path:
+            file_name = self.file_path.split('\\')[-1]
+        return f"File Name: {file_name}."
 
-    criteria_data = Data(
-        dis_frame.iloc[:, 1:],
-        [MAX, MAX, MAX, MAX, MAX],
-        anames=dis_frame['Part'],
-        cnames=dis_frame.columns[1:],
-        weights=[1, 1, 1.25, 1, 1]
-    )
+    """ Convert appropriate columns to datetime data types as just the YEAR """
+    def convert_to_date(self, *column_list, add_thing=None, floater=False, time_change=False):
+        if floater:
+            # If type FLOAT, round down and change type to STRING
+            for na in self.data[([*column_list])]:
+                if len([*column_list]) > 1:
+                    self.data = self.data[self.data[na].notna()]
+                    self.data.loc[:, na] = self.data[na].astype(int)
+                    self.data.loc[:, na] = self.data[na].astype(str) + add_thing
+                    self.data[na] = self.data[na].apply(lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
 
-    dm = simple.WeightedSum(mnorm="sum")
-    dec = dm.decide(criteria_data)
+                else:
+                    self.data = self.data[self.data[na].notna()]
+                    self.data.loc[:, na] = self.data[na].astype(int)
+                    self.data.loc[:, na] = self.data[na].astype(str) + add_thing
+                    self.data[na] = self.data[na].apply(lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
 
-    # Convert Ranks to Series to insert into Dataframe
-    parts = pd.Series(dec.data.anames, name="Part")
-    ranks = pd.Series(dec.rank_, name="Rank")
-    ranked_df = pd.concat([parts, ranks], axis=1)
+            return self.data
 
-    # Obtain Original DataFrame for each Location
-    og_df = df.loc[df['Location'].str.contains(loc)]
+        elif time_change:
+            for na in self.data[([*column_list])]:
+                self.data[na] = self.data[na].astype('datetime64[ns]')
+                return self.data
 
-    # Merge rankings onto DataFrame and rearranging columns
-    new_df = og_df.merge(ranked_df, how='inner', on='Part')
-    cols = new_df.columns.to_list()
-    cols = cols[:12] + cols[-1:] + cols[12:-1]
-    new_df = new_df[cols]
+    def reverse_blend(self, dframe):
+        dframe = self.data.copy()
+        dframe['Blended Coverage'] = dframe['Blended Coverage'].apply(lambda x: (-1 * x + 100) / 100)
 
-    # Write to EXCEL file:
-    new_df.to_excel(rf'C:\Users\cparker\Desktop\Updates\{loc}_RANKINGS.xlsx', index=False, engine='openpyxl')
+        return dframe
 
+    ''' Normalizing attributes, the closer to one the better the ranking, the closer to zero, the worse the ranking '''
+    def min_max_scaling(self, dframe, *columns):
+        dframe = self.data.copy()
+        colz = list(columns)
+
+        for col in colz:
+            dframe[col] = (dframe[col] - dframe[col].min()) / (dframe[col].max() - dframe[col].min())
+
+        return dframe
