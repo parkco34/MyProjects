@@ -13,15 +13,15 @@ pd.set_option('display.width', 600)
 
 
 class Data:
-    user = os.getlogin()
 
     def __init__(self, file_path=None, data=None):
+        self.user = os.getlogin()
         self.file_path = file_path
         self.data = data
 
     """ Retrieve raw data from file path and formats it in a DatFrame """
     def get_file(self):
-        self.file_path = "C:\\Users\\" + user + r"\Desktop\UPDATES"
+        self.file_path = "C:\\Users\\" + self.user + r"\Desktop\UPDATES"
 
         try:
 
@@ -33,7 +33,7 @@ class Data:
             else:
                 print("Required Directory Exists.")
 
-        except TypeError as err:
+        except TypeError as _err:
             self.file_path = auto.prompt(text="No file path found.\nPlease enter the full file path to your data",
                                         title="FILE PATH REQUIRED")
 
@@ -81,12 +81,20 @@ class Data:
         t = os.path.getmtime(file_loc)
         return datetime.fromtimestamp(t)
 
-    def __str__(self):
+    # I initialized the variable file_name
+    def __str__(self, file_name=None):
         if self.file_path:
             file_name = self.file_path.split('\\')[-1]
+
         return f"File Name: {file_name}."
 
-    """ Convert appropriate columns to datetime data types as just the YEAR """
+    """ Takes a dataframe and if the selected columns are floats: convert to integers and then datetimes as YEAR only.
+          Else if the entire column(s) are needed to be datetime without specific format, time_change=True. 
+           
+           Future Changes
+          ------------------ 
+            Add the option to make datetime column as an INDEX for possible Time Series Analysis      """
+
     def convert_to_date(self, *column_list, add_thing=None, floater=False, time_change=False):
         if floater:
             # If type FLOAT, round down and change type to STRING
@@ -110,18 +118,22 @@ class Data:
                 self.data[na] = self.data[na].astype('datetime64[ns]')
                 return self.data
 
-    def reverse_blend(self, dframe):
-        dframe = self.data.copy()
-        dframe['Blended Coverage'] = dframe['Blended Coverage'].apply(lambda x: (-1 * x + 100) / 100)
+    """ Reverses the 'goodness' direction column's particular metric. I could have just chosen to rank  its minimum... """
+    def reverse_blend(self, _dframe=None):
+        _dframe = self.data.copy()
+        _dframe['Blended Coverage'] = _dframe['Blended Coverage'].apply(lambda x: (-1 * x + 100) / 100)
 
-        return dframe
+        return _dframe
 
     ''' Normalizing attributes, the closer to one the better the ranking, the closer to zero, the worse the ranking '''
-    def min_max_scaling(self, dframe, *columns):
-        dframe = self.data.copy()
+    def min_max_scaling(self, _dframe=None, *columns):
+        _dframe = self.data.copy()
         colz = list(columns)
 
         for col in colz:
-            dframe[col] = (dframe[col] - dframe[col].min()) / (dframe[col].max() - dframe[col].min())
+            _dframe[col] = (_dframe[col] - _dframe[col].min()) / (_dframe[col].max() - _dframe[col].min())
 
-        return dframe
+        return _dframe
+
+
+
