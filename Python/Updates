@@ -1,9 +1,9 @@
-import os
 import pandas as pd
-import win32api
-import pyautogui as auto
-import glob
 from datetime import datetime
+import glob
+import os
+import pyautogui as auto
+import Data as data
 
 # Expands data visibility in python terminal
 pd.options.mode.chained_assignment = None
@@ -12,17 +12,15 @@ pd.set_option('display.max_rows', 200)
 pd.set_option('display.width', 600)
 
 
-class Data:
+class Updates:
 
-    def __init__(self, file_path=None, data=None):
+    def __init__(self, raw_data=None):
         self.user = os.getlogin()
-        self.file_path = file_path
-        self.data = data
+        self.raw_data = raw_data
 
-    """ Retrieve raw data from file path and formats it in a DatFrame """
-    def get_file(self):
         self.file_path = "C:\\Users\\" + self.user + r"\Desktop\UPDATES"
 
+        """ Retrieve raw raw_data from file path and formats it in a DatFrame """
         try:
 
             if not os.path.exists(self.file_path):
@@ -31,55 +29,42 @@ class Data:
                 os.mkdir(self.file_path)
 
             else:
-                print("Required Directory Exists.")
+                print(f"Directory: {self.file_path}.")
 
         except TypeError as _err:
             self.file_path = auto.prompt(text="No file path found.\nPlease enter the full file path to your data",
-                                        title="FILE PATH REQUIRED")
+                                         title="FILE PATH REQUIRED")
 
         list_of_files = glob.glob(self.file_path + "\\*")
         # max(iterable, *[, default=obj, key=func])
         self.file_path = max(list_of_files, key=self.modification_date)
 
         if self.file_path.endswith('.csv'):
-            self.data = pd.read_csv(self.file_path)
-
-            return self.data
+            self.raw_data = pd.read_csv(self.file_path)
 
         elif self.file_path.endswith('.xlsx'):
-            self.data = pd.read_excel(self.file_path)
-
-            return self.data
+            self.raw_data = pd.read_excel(self.file_path)
 
         elif self.file_path.endswith('.txt'):
             with open(self.file_path, 'a+') as file:
-                self.data = file.read()
-
-                return self.data
+                self.raw_data = file.read()
 
         else:
-            self.file_path = auto.prompt(text="SOMETHING WENT WRONG...\nPlease enter the full file path of your data",
-                                   title="File Path Required")
+            self.file_path = auto.prompt(text="SOMETHING WENT WRONG...\nPlease enter the full file path of your raw data",
+                                         title="File Path Required")
 
             if self.file_path.endswith('.csv'):
-                self.data = pd.read_csv(self.file_path)
-
-                return
+                self.raw_data = pd.read_csv(self.file_path)
 
             elif self.file_path.endswith('.xlsx'):
-                self.data = pd.read_excel(self.file_path)
-            elif the_pat.endswith('.txt'):
+                self.raw_data = pd.read_excel(self.file_path)
+
+            elif self.file_path.endswith('.txt'):
                 with open(self.file_path, 'r') as file:
-                    self.data = file.read()
+                    self.raw_data = file.read()
 
             else:
                 auto.alert("Losiento...", "ERROR OCCURRED!\nFind Cory and have him solve the problem.")
-
-    """ Function to get to latest file modified in the directory """
-    @staticmethod
-    def modification_date(file_loc):
-        t = os.path.getmtime(file_loc)
-        return datetime.fromtimestamp(t)
 
     # I initialized the variable file_name
     def __str__(self, file_name=None):
@@ -88,52 +73,15 @@ class Data:
 
         return f"File Name: {file_name}."
 
-    """ Takes a dataframe and if the selected columns are floats: convert to integers and then datetimes as YEAR only.
-          Else if the entire column(s) are needed to be datetime without specific format, time_change=True. 
-           
-           Future Changes
-          ------------------ 
-            Add the option to make datetime column as an INDEX for possible Time Series Analysis      """
+    """ Function to get to latest file modified in the directory """
 
-    def convert_to_date(self, *column_list, add_thing=None, floater=False, time_change=False):
-        if floater:
-            # If type FLOAT, round down and change type to STRING
-            for na in self.data[([*column_list])]:
-                if len([*column_list]) > 1:
-                    self.data = self.data[self.data[na].notna()]
-                    self.data.loc[:, na] = self.data[na].astype(int)
-                    self.data.loc[:, na] = self.data[na].astype(str) + add_thing
-                    self.data[na] = self.data[na].apply(lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
+    @staticmethod
+    def modification_date(file_loc):
+        t = os.path.getmtime(file_loc)
+        return datetime.fromtimestamp(t)
 
-                else:
-                    self.data = self.data[self.data[na].notna()]
-                    self.data.loc[:, na] = self.data[na].astype(int)
-                    self.data.loc[:, na] = self.data[na].astype(str) + add_thing
-                    self.data[na] = self.data[na].apply(lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
+raw = Updates()
+df = raw.raw_data
 
-            return self.data
-
-        elif time_change:
-            for na in self.data[([*column_list])]:
-                self.data[na] = self.data[na].astype('datetime64[ns]')
-                return self.data
-
-    """ Reverses the 'goodness' direction column's particular metric. I could have just chosen to rank  its minimum... """
-    def reverse_blend(self, _dframe=None):
-        _dframe = self.data.copy()
-        _dframe['Blended Coverage'] = _dframe['Blended Coverage'].apply(lambda x: (-1 * x + 100) / 100)
-
-        return _dframe
-
-    ''' Normalizing attributes, the closer to one the better the ranking, the closer to zero, the worse the ranking '''
-    def min_max_scaling(self, _dframe=None, *columns):
-        _dframe = self.data.copy()
-        colz = list(columns)
-
-        for col in colz:
-            _dframe[col] = (_dframe[col] - _dframe[col].min()) / (_dframe[col].max() - _dframe[col].min())
-
-        return _dframe
-
-
+#dframe = data.convert_to_date('Min Model Year', 'Max Model Year', add_thing='-01-01', floater=True)
 
