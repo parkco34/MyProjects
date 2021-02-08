@@ -1,0 +1,28 @@
+import pandas as pd
+from datetime import datetime
+from sklearn.preprocessing import minmax_scale
+from skcriteria import Data, MIN, MAX
+from skcriteria.madm import simple
+
+class MCDM:
+    def __init__(self, dataframe):
+        self.dataframe = dataframe
+
+    """ Reverses the 'goodness' direction column's particular metric. I could have just chosen to rank  its minimum... """
+
+    def reverse_blend(self, _dframe=None):
+        _dframe = self.dataframe.copy()
+        _dframe['Blended Coverage'] = _dframe['Blended Coverage'].apply(lambda x: (-1 * x + 100) / 100)
+
+        return _dframe
+
+    ''' Normalizing attributes, the closer to one the better the ranking, the closer to zero, the worse the ranking '''
+
+    def min_max_scaling(self, _dframe=None, *columns):
+        _dframe = self.dataframe.copy()
+        colz = list(columns)
+
+        for col in colz:
+            _dframe[col] = (_dframe[col] - _dframe[col].min()) / (_dframe[col].max() - _dframe[col].min())
+
+        return _dframe
