@@ -1,9 +1,9 @@
 import pandas as pd
+from io import StringIO
 from datetime import datetime
 import glob
 import os
 import pyautogui as auto
-import Data as data
 
 # Expands data visibility in python terminal
 pd.options.mode.chained_assignment = None
@@ -46,7 +46,7 @@ class Updates:
             self.raw_data = pd.read_excel(self.file_path)
 
         elif self.file_path.endswith('.txt'):
-            with open(self.file_path, 'a+') as file:
+            with open(self.file_path, 'r+') as file:
                 self.raw_data = file.read()
 
         else:
@@ -80,8 +80,66 @@ class Updates:
         t = os.path.getmtime(file_loc)
         return datetime.fromtimestamp(t)
 
-raw = Updates()
-df = raw.raw_data
+    """ Takes a dataframe and if the selected columns are floats: convert to integers and then datetimes as YEAR only.
+          Else if the entire column(s) are needed to be datetime without specific format, time_change=True. 
+
+           Future Changes
+          ------------------ 
+            Add the option to make datetime column as an INDEX for possible Time Series Analysis      """
+    @classmethod
+    def convert_to_date(cls, dataframe, *column_list, add_thing=None):
+
+        if all(x == float for x in dataframe[([*column_list])].dtypes) & (add_thing is not None):
+            # If type FLOAT, round down and change type to STRING
+            for na in dataframe[([*column_list])]:
+                if len([*column_list]) > 1:
+                    dataframe = dataframe[dataframe[na].notna()]
+                    dataframe.loc[:, na] = dataframe[na].astype(int)
+                    dataframe.loc[:, na] = dataframe[na].astype(str) + add_thing
+                    dataframe[na] = dataframe[na].apply(
+                        lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
+
+                    return dataframe
+
+                else:
+                    dataframe = dataframe[dataframe[na].notna()]
+                    dataframe.loc[:, na] = dataframe[na].astype(int)
+                    dataframe.loc[:, na] = dataframe[na].astype(str) + add_thing
+                    dataframe[na] = dataframe[na].apply(
+                        lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
+
+                    return dataframe
+
+        elif all(x == object for x in df[([*column_list])].dtypes):
+            for na in dataframe[([*column_list])]:
+                dataframe.loc[:, na] = dataframe[na].astype(str)
+                dataframe[na] = dataframe[na].apply(lambda _: datetime.strptime(_, '%Y-%m-%d %H:%M:%S').date().year)
+
+            return dataframe
+
+        else:
+            raise Exception("Must first obtain dataframe through the 'get_dframe' instance method.\nOR\nCheck"
+                            "your target columns")
+
+    def get_dframe(self):
+        if type(self.raw_data) == str:
+            string_data = StringIO(self.raw_data)
+            self.raw_data = pd.read_csv(string_data)
+
+            return self.raw_data
+
+        elif type(self.raw_data) == pd.core.frame.DataFrame:
+            return self.raw_data
+
+        else:
+            auto.alert("Something went wrong!\nPlease check target file extension.")
+            raise Exception("Unable to obtain dataframe!\nCheck target file extension.")
+
 
 #dframe = data.convert_to_date('Min Model Year', 'Max Model Year', add_thing='-01-01', floater=True)
 
+up = Updates()
+df = up.get_dframe()
+# new_df = up.convert_to_date(df, 'Min Model Year', 'Max Model Year', add_thing='-01-01')
+
+dis_df = up.convert_to_date(df, 'Last Update')
