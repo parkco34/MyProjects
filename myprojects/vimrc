@@ -36,7 +36,7 @@ noremap <Left> <nop>
 noremap <Right> <nop>
 noremap <Up> <nop>
 noremap <Down> <nop>
-nnoremap <leader>g :silent execute "grep! -R " . shellescape(expand("<cWORD>")) . " ."<cr>:copen<cr>
+"nnoremap <leader>g :silent execute "grep! -R " . shellescape(expand("<cWORD>")) . " ."<cr>:copen<cr>
 augroup curse
     autocmd!
     autocmd BufNewFile,BufRead *.html setlocal nowrap
@@ -46,7 +46,6 @@ augroup curse
     autocmd FileType python :iabbrev <buffer> fucks ( ͡° ͜ʖ ͡° )
     autocmd FileType python :iabbrev <buffer> fuckers ( ͡° ͜ʖ ͡° )
 augroup END
-
 
 " Delete contents inside of next parentheses and place cursor in insert mode between them
 onoremap in( :<c-u>normal! f(vi(<cr>)) )
@@ -71,10 +70,6 @@ set wrap
 set background=dark
 syntax on
 
-" HTML/CSS:
-let g:user_emmet_install_global = 0
-autocmd FileType html,css EmmetInstall
-
 " set runtime path to include Vundle and initialize
 set rtp+=~/.vim/bundle/Vundle.vim
 call vundle#begin()
@@ -90,7 +85,6 @@ nnoremap <F12>f :exe ':silent !firefox %'<CR>
 nnoremap <F12>c :exe ':silent !chromium-browser %'<CR>
 nnoremap <F12>o :exe ':silent !opera %'<CR>
 autocmd Filetype css setlocal tabstop=2
-autocmd Filetype javascript setlocal tabstop=2 sts=2
 set splitbelow
 set splitright
 
@@ -105,9 +99,6 @@ set sw=4
 set smarttab
 set cindent
 
-" Commenting in jSX
-autocmd FileType javascript.jsx setlocal commentstring={/*\ %s\ */}
-
 source ~/.vim/colors/vim-colorschemes/colors/blade_runner.vim
 source ~/.vim/vcomments.vim
 let g:colors_name = "blade_runner"
@@ -119,22 +110,12 @@ nnoremap <C-K> <C-W><C-K>
 nnoremap <C-L> <C-W><C-L>
 nnoremap <C-H> <C-W><C-H>
 
+" Emmet-vim
+let g:user_emmet_leader_key=','
+
 let g:ycm_global_ycm_extra_conf = '~/.vim/bundle/YouCompleteMe/.ycm_extra_conf.py'
 let g:ale_echo_msg_error_str = 'E'
 let g:ale_echo_msg_warning_str = 'W'
-let g:ale_linters = {
-\   'python': ['flake8', 'pylint'],
-\   'javascript': ['eslint'],
-\   'vue': ['eslint']
-\}
-let g:ale_fixers = {
-  \    'javascript': ['eslint'],
-  \    'typescript': ['prettier', 'tslint'],
-  \    'vue': ['eslint'],
-  \    'scss': ['prettier'],
-  \    'html': ['prettier'],
-  \    'reason': ['refmt']
-\}
 let g:ale_fix_on_save = 1
 
 au BufNewFile,BufRead *.py
@@ -145,11 +126,6 @@ au BufNewFile,BufRead *.py
     \ set expandtab |
     \ set autoindent |
     \ set fileformat=unix
-
-au BufNewFile,BufRead *.js,*.html,*.css,*.tex
-    \ setlocal tabstop=2 |
-    \ setlocal softtabstop=2 |
-    \ setlocal shiftwidth=2 |
 
 let g:ycm_autoclose_preview_window_after_completion=1
 map <leader>g  :YcmCompleter GoToDefinitionElseDeclaration<CR>
@@ -171,22 +147,11 @@ Plugin 'w0rp/ale'
 Plugin 'Valloric/YouCompleteMe'
 Plugin 'jiangmiao/auto-pairs'
 Plugin 'vim-scripts/indentpython.vim'
-Plugin 'jistr/vim-nerdtree-tabs'
-Plugin 'hail2u/vim-css3-syntax'
-Plugin 'maxmellon/vim-jsx-pretty'
 Plugin 'mattn/emmet-vim'
-Plugin 'grvcoelho/vim-javascript-snippets'
-Plugin 'pangloss/vim-javascript'
 
 
 " All plugins must be added before the following:
 call vundle#end()
-au FileType javascript setlocal formatprg=prettier
-au FileType javascript.jsx setlocal formatprg=prettier
-au FileType typescript setlocal formatprg=prettier\ --parser\ typescript
-au FileType html setlocal formatprg=js-beautify\ --type\ html
-au FileType scss setlocal formatprg=prettier\ --parser\ css
-au FileType css setlocal formatprg=prettier\ --parser\ css
 " Vim code I found on stack overflow to redirect python output:
 " Bind F5 to save file if modified and execute python script in a buffer.
 nnoremap <silent> <F5> :call SaveAndExecutePython()<CR>
@@ -247,13 +212,5 @@ endfunction
 
 set nofoldenable
 
-" Emmet-vim:
-let g:user_emmet_leader_key=','
-
-let g:user_emmet_settings = {
-\  'javascript' : {
-\      'extends' : 'jsx',
-\  },
-\}
 
 
