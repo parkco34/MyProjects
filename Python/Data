@@ -1,4 +1,4 @@
-from datetime import datetime
+
 
 class Data:
 
@@ -6,49 +6,18 @@ class Data:
         self.dataframe = dataframe
 
     def __str__(self):
-        return f"Summary of the data: {self.dataframe.describe()}.\nShape of the data: {self.dataframe.shape}\n" \
-               f"Missing values: {self.dataframe.isnull().any()}"
-
-    """ Takes a dataframe and if the selected columns are floats: convert to integers and then datetimes as YEAR only.
-          Else if the entire column(s) are needed to be datetime without specific format, time_change=True. 
-
-           Future Changes
-          ------------------ 
-            Add the option to make datetime column as an INDEX for possible Time Series Analysis      """
-    def convert_to_date(self, *column_list, add_thing=None, floater=False, time_change=False):
-
-        if floater:
-            # If type FLOAT, round down and change type to STRING
-            for na in self.dataframe[([*column_list])]:
-                if len([*column_list]) > 1:
-                    self.dataframe = self.dataframe[self.dataframe[na].notna()]
-                    self.dataframe.loc[:, na] = self.dataframe[na].astype(int)
-                    self.dataframe.loc[:, na] = self.dataframe[na].astype(str) + add_thing
-                    self.dataframe[na] = self.dataframe[na].apply(lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
-
-                    return self.dataframe
-
-                else:
-                    self.dataframe = self.dataframe[self.dataframe[na].notna()]
-                    self.dataframe.loc[:, na] = self.dataframe[na].astype(int)
-                    self.dataframe.loc[:, na] = self.dataframe[na].astype(str) + add_thing
-                    self.dataframe[na] = self.dataframe[na].apply(lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
-
-                    return self.dataframe
-
-        elif time_change:
-            for na in self.dataframe[([*column_list])]:
-                self.dataframe[na] = self.dataframe[na].astype('datetime64[ns]')
-
-            return self.dataframe
+        return f"\nStatistical summary of the data: \n============================={self.dataframe.describe()}." \
+               f"\n\nShape of the data: {self.dataframe.shape}\n\n" \
+               f"Missing values:\n============================= \n{self.dataframe.isnull().any()}"
 
     def missing_values(self):
-        for i in self.dataframe.columns:
-            if (self.dataframe[i].dtypes == object) or (self.dataframe[i].dtypes == str) and self.dataframe[i].isnull().any():
+        for i in self.dataframe:
+            dt = self.dataframe[i].dtype
+            if dt == object:
                 self.dataframe[i] = self.dataframe[i].fillna("")
 
-            elif (self.dataframe[i].dtypes == float) or (self.dataframe[i].dtypes == int) and self.dataframe[i].isnull().any():
+            else:
                 self.dataframe[i] = self.dataframe[i].fillna(0)
 
-
+        return self.dataframe
 
