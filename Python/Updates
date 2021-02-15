@@ -1,9 +1,13 @@
 import pandas as pd
+import numpy as np
+import dateutil.parser as dtup
 from io import StringIO
 from datetime import datetime
-import glob
 import os
 import pyautogui as auto
+from skcriteria import Data, MAX
+from skcriteria.madm import simple
+import Data as dat
 
 # Expands data visibility in python terminal
 pd.options.mode.chained_assignment = None
@@ -19,6 +23,7 @@ class Updates:
         self.raw_data = raw_data
 
         self.file_path = "C:\\Users\\" + self.user + r"\Desktop\UPDATES"
+        os.chdir(self.file_path)
 
         """ Retrieve raw raw_data from file path and formats it in a DatFrame """
         try:
@@ -35,32 +40,35 @@ class Updates:
             self.file_path = auto.prompt(text="No file path found.\nPlease enter the full file path to your data",
                                          title="FILE PATH REQUIRED")
 
-        list_of_files = glob.glob(self.file_path + "\\*")
-        # max(iterable, *[, default=obj, key=func])
-        self.file_path = max(list_of_files, key=self.modification_date)
+        list_of_files = {}
+        for fil in os.listdir():
+            list_of_files[fil] = os.path.getmtime(fil)
 
-        if self.file_path.endswith('.csv'):
-            self.raw_data = pd.read_csv(self.file_path)
+        self.the_file = max(list_of_files, key=self.modification_date)
 
-        elif self.file_path.endswith('.xlsx'):
-            self.raw_data = pd.read_excel(self.file_path)
+        if self.the_file.endswith('.csv'):
+            self.raw_data = pd.read_csv(self.the_file)
 
-        elif self.file_path.endswith('.txt'):
-            with open(self.file_path, 'r+') as file:
+        elif self.the_file.endswith('.xlsx'):
+            self.raw_data = pd.read_excel(self.the_file)
+
+        elif self.the_file.endswith('.txt'):
+            with open(self.the_file, 'r+') as file:
                 self.raw_data = file.read()
 
         else:
-            self.file_path = auto.prompt(text="SOMETHING WENT WRONG...\nPlease enter the full file path of your raw data",
-                                         title="File Path Required")
+            self.the_file = auto.prompt(
+                text="SOMETHING WENT WRONG...\nPlease enter the full file path of your raw data",
+                title="File Path Required")
 
-            if self.file_path.endswith('.csv'):
-                self.raw_data = pd.read_csv(self.file_path)
+            if self.the_file.endswith('.csv'):
+                self.raw_data = pd.read_csv(self.the_file)
 
-            elif self.file_path.endswith('.xlsx'):
-                self.raw_data = pd.read_excel(self.file_path)
+            elif self.the_file.endswith('.xlsx'):
+                self.raw_data = pd.read_excel(self.the_file)
 
-            elif self.file_path.endswith('.txt'):
-                with open(self.file_path, 'r') as file:
+            elif self.the_file.endswith('.txt'):
+                with open(self.the_file, 'r') as file:
                     self.raw_data = file.read()
 
             else:
@@ -68,8 +76,8 @@ class Updates:
 
     # I initialized the variable file_name
     def __str__(self, file_name=None):
-        if self.file_path:
-            file_name = self.file_path.split('\\')[-1]
+        if self.the_file:
+            file_name = self.the_file.split('\\')[-1]
 
         return f"File Name: {file_name}."
 
@@ -86,20 +94,18 @@ class Updates:
            Future Changes
           ------------------ 
             Add the option to make datetime column as an INDEX for possible Time Series Analysis      """
+
     @classmethod
     def convert_to_date(cls, dataframe, *column_list, add_thing=None):
 
-        if all(x == float for x in dataframe[([*column_list])].dtypes) & (add_thing is not None):
+        if all(x == float for x in dataframe[([*column_list])].dtypes):
             # If type FLOAT, round down and change type to STRING
             for na in dataframe[([*column_list])]:
                 if len([*column_list]) > 1:
                     dataframe = dataframe[dataframe[na].notna()]
                     dataframe.loc[:, na] = dataframe[na].astype(int)
                     dataframe.loc[:, na] = dataframe[na].astype(str) + add_thing
-                    dataframe[na] = dataframe[na].apply(
-                        lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
-
-                    return dataframe
+                    dataframe.loc[:, na] = dataframe[na].apply(lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
 
                 else:
                     dataframe = dataframe[dataframe[na].notna()]
@@ -108,13 +114,17 @@ class Updates:
                     dataframe[na] = dataframe[na].apply(
                         lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
 
-                    return dataframe
+            return dataframe
 
-        elif all(x == object for x in df[([*column_list])].dtypes):
+        elif all(x == object for x in dataframe[([*column_list])].dtypes):
             for na in dataframe[([*column_list])]:
                 dataframe.loc[:, na] = dataframe[na].astype(str)
-                dataframe[na] = dataframe[na].apply(lambda _: datetime.strptime(_, '%Y-%m-%d %H:%M:%S').date().year)
+                dataframe.loc[:, na] = dataframe[na].apply(lambda _: dtup.parse(_).date().year)
 
+            return dataframe
+
+        elif all((x == int) or (x == np.int64) for x in dataframe[([*column_list])].dtypes):
+            print("No need to make any changes...")
             return dataframe
 
         else:
@@ -136,10 +146,72 @@ class Updates:
             raise Exception("Unable to obtain dataframe!\nCheck target file extension.")
 
 
-#dframe = data.convert_to_date('Min Model Year', 'Max Model Year', add_thing='-01-01', floater=True)
+class MCDM:
+    def __init__(self):
+        up = Updates()
+        self.dataframe = up.get_dframe()
+        self.dataframe = up.convert_to_date(self.dataframe, 'Max Model Year', 'Min Model Year', add_thing='-01-01')
 
-up = Updates()
-df = up.get_dframe()
-# new_df = up.convert_to_date(df, 'Min Model Year', 'Max Model Year', add_thing='-01-01')
+        clean = dat.Data(self.dataframe)
+        self.dataframe = clean.missing_values()
 
-dis_df = up.convert_to_date(df, 'Last Update')
+    @staticmethod
+    def min_max_scaling(feed_df, *columnz):
+        colz = list(columnz)
+        frame = feed_df.copy()
+
+        for col in colz:
+            frame[col] = (frame[col] - frame[col].min()) / (frame[col].max() - frame[col].min())
+
+        return frame
+
+    def wsm(self):
+        locations = {}
+        df_dict = {}
+        for loc in self.dataframe['Location'].unique():
+            locations[loc] = self.dataframe.loc[self.dataframe['Location'] == loc]
+            df_dict[loc[13:]] = self.min_max_scaling(locations[loc], 'Last 12 Mo Sales', 'Local Experian VIO',
+                                                     'Local Vista Demand',
+                                                     'Alliance DW Region', 'Blended Coverage')
+
+        for loc in df_dict.keys():
+            dframe = df_dict[loc][['Part',
+                'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand',
+                'Alliance DW Region', 'Blended Coverage']]
+
+            criteria_data = Data(
+                dframe.iloc[:, 1:],
+                [MAX, MAX, MAX, MAX, MAX],
+                anames=dframe['Part'],
+                cnames=dframe.columns[1:],
+                weights=[1, 1, 1.25, 1, 1]
+            )
+
+            dm = simple.WeightedSum(mnorm="sum")
+            dec = dm.decide(criteria_data)
+
+            # Convert Ranks to Series to insert into Dataframe
+            parts = pd.Series(dec.data.anames, name="Part")
+            ranks = pd.Series(dec.rank_, name="Rank")
+            ranked_df = pd.concat([parts, ranks], axis=1)
+
+            # Obtain original dataframe from each location
+            og_df = self.dataframe.loc[self.dataframe['Location'].str.contains(loc)]
+
+            # Merge rankings onto dataframe and rearranging columns
+            new_dframe = og_df.merge(ranked_df, how='inner', on='Part')
+            cols = new_dframe.columns.to_list()
+            cols = cols[:12] + cols[-1:] + cols[12: -1]
+            new_dframe = new_dframe[cols]
+
+            # File path to Updates folder
+            user = os.getlogin()
+            file_path = r'C:\Users\\' + user + '\\Desktop\\UPDATES\\'
+
+            # Write to Excel file
+            print(file_path)
+            new_dframe.to_excel(file_path + f'\\{loc}_Rankings.xlsx', index=False)
+
+
+decisions = MCDM()
+decisions.wsm()
