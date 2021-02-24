@@ -207,9 +207,8 @@ class MCDM:
             # File path to Updates folder
             user = os.getlogin()
             file_path = r'C:\Users\\' + user + '\\Desktop\\UPDATES\\'
-
-            # Write to Excel file
-            print(file_path)
+            print(file_path + f"\\{loc}_Rankings.xls")
+            # Write to Excel file ... (replace this with an instance method from a Data subclass!)
             new_dframe.to_excel(file_path + f'\\{loc}_Rankings.xlsx', index=False)
 
 
