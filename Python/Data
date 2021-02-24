@@ -1,4 +1,4 @@
-
+import pandas as pd
 
 class Data:
 
@@ -20,4 +20,31 @@ class Data:
                 self.dataframe[i] = self.dataframe[i].fillna(0)
 
         return self.dataframe
+
+
+class GetExcelFormat(Data):
+    def __init__(self, dataframe):
+        Data.__init__(self, dataframe)
+
+    def __str__(self):
+        return "\nDataFrame: " + self.dataframe + " \nwith Columns: " + self.dataframe.columns + \
+                "\nShape: " + self.dataframe.shape + "\nStatistical Summary: " + self.dataframe.describe()
+
+    """ Setter method: Formatting column headers with vetical orientation. """
+    def vertical_headers(self, output_to, sheet="Sheet1", **formatter):
+        writer = pd.ExcelWriter(output_to, engine='xlsxwriter')
+        self.dataframe.to_excel(writer, index=False, startrow=1, sheet_name=sheet)
+
+        list_of_headers = list(self.dataframe.columns.values)
+        workbook = writer.book
+
+        """ Format for specific situation using **kwargs to pass a dictionary into the function"""
+        format = workbook.add_format({formatter["bold"], formatter["font_color"], formatter["align"]})
+        format.set_rotation(90)
+
+        for col in self.dataframe.columns:
+            writer.sheets[sheet].set_column(col, len(col))
+
+        for i in range(0, len(list_of_headers)):
+            writer.sheets[sheet].write(0, i, list_of_headers[i], format)
 
