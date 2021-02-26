@@ -23,15 +23,17 @@ class Updates:
         self.raw_data = raw_data
 
         self.file_path = "C:\\Users\\" + self.user + r"\Desktop\UPDATES"
-        os.chdir(self.file_path)
+        os.chdir("C:\\Users\\" + self.user + "\\Desktop")
 
-        """ Retrieve raw raw_data from file path and formats it in a DatFrame """
+        """ Retrieve raw_data from file path and formats it in a DatFrame """
         try:
 
             if not os.path.exists(self.file_path):
                 print("Making Directory in: " + self.file_path)
-                auto.alert(f"Creating directory at: {self.file_path}", "CORY WANTS YOU TO KNOW...")
+                auto.alert(f"Creating directory at: {self.file_path}\nLo Siento, but you're going to have to run program again. \n(ノಠ益ಠ)ノ彡┻━┻", "Parker WANTS YOU TO KNOW...")
                 os.mkdir(self.file_path)
+
+                exit()
 
             else:
                 print(f"Directory: {self.file_path}.")
@@ -46,21 +48,7 @@ class Updates:
 
         self.the_file = max(list_of_files, key=self.modification_date)
 
-        if self.the_file.endswith('.csv'):
-            self.raw_data = pd.read_csv(self.the_file)
-
-        elif self.the_file.endswith('.xlsx'):
-            self.raw_data = pd.read_excel(self.the_file)
-
-        elif self.the_file.endswith('.txt'):
-            with open(self.the_file, 'r+') as file:
-                self.raw_data = file.read()
-
-        else:
-            self.the_file = auto.prompt(
-                text="SOMETHING WENT WRONG...\nPlease enter the full file path of your raw data",
-                title="File Path Required")
-
+        try:
             if self.the_file.endswith('.csv'):
                 self.raw_data = pd.read_csv(self.the_file)
 
@@ -68,11 +56,32 @@ class Updates:
                 self.raw_data = pd.read_excel(self.the_file)
 
             elif self.the_file.endswith('.txt'):
-                with open(self.the_file, 'r') as file:
+                with open(self.the_file, 'r+') as file:
                     self.raw_data = file.read()
 
             else:
-                auto.alert("Losiento...", "ERROR OCCURRED!\nFind Cory and have him solve the problem.")
+                self.the_file = auto.prompt(
+                    text="SOMETHING WENT WRONG...\nPlease enter the full file path of your raw data",
+                    title="File Path Required")
+
+                if self.the_file.endswith('.csv'):
+                    self.raw_data = pd.read_csv(self.the_file)
+
+                elif self.the_file.endswith('.xlsx'):
+                    self.raw_data = pd.read_excel(self.the_file)
+
+                elif self.the_file.endswith('.txt'):
+                    with open(self.the_file, 'r') as file:
+                        self.raw_data = file.read()
+
+                else:
+                    auto.alert("Losiento...", "ERROR OCCURRED!\nFind Cory and have him solve the problem.")
+
+        except AttributeError as _err:
+            self.the_file = auto.alert(
+                "OOPS... \nPlease enter a fucking file for me go mess with, dude... \nWhat's your fucking problem man??",
+                "You should probably go find someon with brains.\n   Just sayin..."
+            )
 
     # I initialized the variable file_name
     def __str__(self, file_name=None):
@@ -206,10 +215,13 @@ class MCDM:
 
             # File path to Updates folder
             user = os.getlogin()
-            file_path = r'C:\Users\\' + user + '\\Desktop\\UPDATES\\'
-            print(file_path + f"\\{loc}_Rankings.xls")
+            file_path = r'C:\Users\\' + user + '\\Desktop\\UPDATES\\' + f'\\{loc}_Rankings.xlsx'
+            print(file_path)
             # Write to Excel file ... (replace this with an instance method from a Data subclass!)
-            new_dframe.to_excel(file_path + f'\\{loc}_Rankings.xlsx', index=False)
+            """ Invoke Class to write and format the Excel File """
+            xl_format = dat.GetExcelFormat(new_dframe, file_path)
+            xl_format.format_workbook(loc)
+            # new_dframe.to_excel(file_path, index=False)
 
 
 decisions = MCDM()
