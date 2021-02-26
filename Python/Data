@@ -23,28 +23,32 @@ class Data:
 
 
 class GetExcelFormat(Data):
-    def __init__(self, dataframe):
+    def __init__(self, dataframe, path_to_xlsx):
         Data.__init__(self, dataframe)
+        self.path_to_xlsx = path_to_xlsx
 
     def __str__(self):
-        return "\nDataFrame: " + self.dataframe + " \nwith Columns: " + self.dataframe.columns + \
+        return "\nFile Path is: " + self.file_path + "\nDataFrame: " + self.dataframe + " \nwith Columns: " + self.dataframe.columns + \
                 "\nShape: " + self.dataframe.shape + "\nStatistical Summary: " + self.dataframe.describe()
 
-    """ Setter method: Formatting column headers with vetical orientation. """
-    def vertical_headers(self, output_to, sheet="Sheet1", **formatter):
-        writer = pd.ExcelWriter(output_to, engine='xlsxwriter')
-        self.dataframe.to_excel(writer, index=False, startrow=1, sheet_name=sheet)
+    """ Formats the column headers to be bold and vertical by writing the dataframe to excel file.
+        Then creating a Workbook and Worksheet object in order to do the formatting. """
+    @classmethod
+    def format_workbook(cls, name_of_sheet):
+        with pd.ExcelWriter(cls.path_to_xlsx) as writer:
+            cls.dataframe.to_excel(writer, startrow=1, header=False, index=False, sheet_name=name_of_sheet)
 
-        list_of_headers = list(self.dataframe.columns.values)
-        workbook = writer.book
+            cls.workbook = writer.book
+            cls.worksheet = cls.workbook[name_of_sheet]
 
-        """ Format for specific situation using **kwargs to pass a dictionary into the function"""
-        format = workbook.add_format({formatter["bold"], formatter["font_color"], formatter["align"]})
-        format.set_rotation(90)
+            header_format = cls.workbook.add_format({
+                'bold': True,
+                'align': 'center',
+                'font_color': 'black'
+            })
+            header_format.set_rotation(90)
 
-        for col in self.dataframe.columns:
-            writer.sheets[sheet].set_column(col, len(col))
+            for col, val in enumerate(cls.dataframe.columns.values):
+                cls.worksheet.write(0, col, val, header_format)
 
-        for i in range(0, len(list_of_headers)):
-            writer.sheets[sheet].write(0, i, list_of_headers[i], format)
 
