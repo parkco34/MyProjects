@@ -1,0 +1,232 @@
+import pandas as pd
+import numpy as np
+import dateutil.parser as dtup
+from io import StringIO
+from datetime import datetime, date
+import os
+import pyautogui as auto
+from skcriteria import Data, MAX
+from skcriteria.madm import simple
+import Data as dat
+
+# Expands data visibility in python terminal
+pd.options.mode.chained_assignment = None
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.max_rows', 200)
+pd.set_option('display.width', 600)
+
+
+class Updates:
+    today = date.today().strftime('%d%m%y')
+
+    def __init__(self, raw_data=None):
+        self.user = os.getlogin()
+        self.raw_data = raw_data
+
+        self.file_path = "C:\\Users\\" + self.user + r"\Desktop\UPDATES"
+        os.chdir("C:\\Users\\" + self.user + "\\Desktop")
+
+        """ Retrieve raw_data from file path and formats it in a DatFrame """
+        try:
+            if not os.path.exists(self.file_path):
+                print("Making Directory in: " + self.file_path)
+                auto.alert(f"Creating directory at: {self.file_path}\nLo Siento, but you're going to have to run program again. \n(ノಠ益ಠ)ノ彡┻━┻", "Parker WANTS YOU TO KNOW...")
+                os.mkdir(self.file_path)
+
+                exit()
+
+            else:
+                print(f"Directory: {self.file_path}.")
+                os.chdir(self.file_path)
+
+        except TypeError as _err:
+            self.file_path = auto.prompt(text="No file path found.\nPlease enter the full file path to your data",
+                                         title="FILE PATH REQUIRED")
+            os.chdir(self.file_path)
+
+        list_of_files = {}
+        for fil in os.listdir():
+            list_of_files[fil] = os.path.getmtime(fil)
+
+        self.the_file = max(list_of_files, key=self.modification_date)
+
+        try:
+            print(self.the_file.lower())
+            if self.the_file.lower().endswith('.csv'):
+                self.raw_data = pd.read_csv(self.the_file)
+
+            elif self.the_file.lower().endswith('.xlsx'):
+                self.raw_data = pd.read_excel(self.the_file)
+
+            elif self.the_file.lower().endswith('.txt'):
+                with open(self.the_file, 'r+') as file:
+                    self.raw_data = file.read()
+
+            else:
+                self.the_file = auto.prompt(
+                    text="SOMETHING WENT WRONG...\nPlease enter the full file path of your raw data",
+                    title="File Path Required")
+
+                if self.the_file.lower().endswith('.csv'):
+                    self.raw_data = pd.read_csv(self.the_file)
+
+                elif self.the_file.lower().endswith('.xlsx'):
+                    self.raw_data = pd.read_excel(self.the_file)
+
+                elif self.the_file.lower().endswith('.txt'):
+                    with open(self.the_file, 'r') as file:
+                        self.raw_data = file.read()
+
+                else:
+                    auto.alert("Losiento...", "ERROR OCCURRED!\nFind Cory and have him solve the problem.")
+
+        except AttributeError as _err:
+            self.the_file = auto.alert(
+                "OOPS... \nPlease enter a fucking file for me go mess with, dude... \nWhat's your fucking problem man??",
+                "You should probably go find someone with brains.\n   Just sayin..."
+            )
+
+    # I initialized the variable file_name
+    def __str__(self, file_name=None):
+        if self.the_file:
+            file_name = self.the_file.split('\\')[-1]
+
+        return f"File Name: {file_name}."
+
+    """ Function to get to latest file modified in the directory """
+
+    @staticmethod
+    def modification_date(file_loc):
+        t = os.path.getmtime(file_loc)
+        return datetime.fromtimestamp(t)
+
+    """ Takes a dataframe and if the selected columns are floats: convert to integers and then datetimes as YEAR only.
+          Else if the entire column(s) are needed to be datetime without specific format, time_change=True. 
+
+           Future Changes
+          ------------------ 
+            Add the option to make datetime column as an INDEX for possible Time Series Analysis      """
+
+    @classmethod
+    def convert_to_date(cls, dataframe, *column_list, add_thing=None):
+
+        if all(x == float for x in dataframe[([*column_list])].dtypes):
+            # If type FLOAT, round down and change type to STRING
+            for na in dataframe[([*column_list])]:
+                if len([*column_list]) > 1:
+                    dataframe = dataframe[dataframe[na].notna()]
+                    dataframe.loc[:, na] = dataframe[na].astype(int)
+                    dataframe.loc[:, na] = dataframe[na].astype(str) + add_thing
+                    dataframe.loc[:, na] = dataframe[na].apply(lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
+
+                else:
+                    dataframe = dataframe[dataframe[na].notna()]
+                    dataframe.loc[:, na] = dataframe[na].astype(int)
+                    dataframe.loc[:, na] = dataframe[na].astype(str) + add_thing
+                    dataframe[na] = dataframe[na].apply(
+                        lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
+
+            return dataframe
+
+        elif all(x == object for x in dataframe[([*column_list])].dtypes):
+            for na in dataframe[([*column_list])]:
+                dataframe.loc[:, na] = dataframe[na].astype(str)
+                dataframe.loc[:, na] = dataframe[na].apply(lambda _: dtup.parse(_).date().year)
+
+            return dataframe
+
+        elif all((x == int) or (x == np.int64) for x in dataframe[([*column_list])].dtypes):
+            print("No need to make any changes...")
+            return dataframe
+
+        else:
+            raise Exception("Must first obtain dataframe through the 'get_dframe' instance method.\nOR\nCheck"
+                            "your target columns")
+
+    def get_dframe(self):
+        if type(self.raw_data) == str:
+            string_data = StringIO(self.raw_data)
+            self.raw_data = pd.read_csv(string_data)
+
+            return self.raw_data
+
+        elif type(self.raw_data) == pd.core.frame.DataFrame:
+            return self.raw_data
+
+        else:
+            raise Exception("Unable to obtain dataframe!\nCheck target file extension.")
+        
+
+
+class MCDM:
+
+    def __init__(self):
+        self.up = Updates()
+        self.dataframe = self.up.get_dframe()
+        self.dataframe = self.up.convert_to_date(self.dataframe, 'Max Model Year', 'Min Model Year', add_thing='-01-01')
+
+        clean = dat.Data(self.dataframe)
+        self.dataframe = clean.missing_values()
+
+
+    def get_dframe_groups(self, the_column, *criteria):
+        
+        def min_max_scaling(feed_df):
+            frame = feed_df.copy()
+
+            for col in criteria:
+                print(col)
+                frame[col] = (frame[col] - frame[col].min()) / (frame[col].max() - frame[col].min())
+
+            return frame
+
+        locations = {}
+        pre_df = {}
+
+        for loc in self.dataframe[the_column].unique():
+            locations[loc] = self.dataframe.loc[self.dataframe[the_column] == loc]
+            # Refactor below... possibly using REGEX!
+            pre_df[loc[13:]] = min_max_scaling(locations[loc])
+
+        return pre_df
+
+
+decisions = MCDM()
+df_dict = decisions.get_dframe_groups('Location', 'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand',
+                'Alliance DW Region', 'Blended Coverage')
+
+new_frame = {}
+for loc in df_dict:
+    dframe = df_dict[loc][['Part', 'Location', 'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand',
+                'Alliance DW Region', 'Blended Coverage']]
+
+    criteria_data = Data(
+        dframe.iloc[:, 1:],
+        [MAX, MAX, MAX, MAX, MAX],
+        anames=dframe['Part'],
+        cnames=dframe.columns[1:],
+        weights=[1, 1, 1.25, 1, 1]
+    )
+
+    dm = simple.WeightedProduct(mnorm="sum")
+    dec = dm.decide(criteria_data)
+
+    #Convert Ranks to Series to insert into DataFrame
+    parts = pd.Series(dec.data.anames, name="Part")
+    ranks = pd.Series(dec.rank_, name="Rank")
+    ranked_df = pd.concat([parts, ranks], axis=1)
+
+    # Obtain original dataframe from each location
+    og_df = self.dataframe.loc[self.dataframe['Location'].str.contains(loc)]
+
+    # Merge rankings onto dataframe and rearranging columns
+    new_dframe[loc] = og_df.merge(ranked_df, how='inner', on='Part')
+    cols = new_dframe.columns.to_list()
+    cols = cols[:12] + cols[-1:] + cols[12: -1]
+    new_dframe = new_dframe[cols]
+    
+print(new_dframe)
+#    """ Write to one excel file, multiple sheets by column and format column
+#    headers to be bold and vertical """
+
+
