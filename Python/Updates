@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import dateutil.parser as dtup
 from io import StringIO
-from datetime import datetime
+from datetime import datetime, date
 import os
 import pyautogui as auto
 from skcriteria import Data, MAX
@@ -17,6 +17,7 @@ pd.set_option('display.width', 600)
 
 
 class Updates:
+    today = date.today().strftime('%d%m%y')
 
     def __init__(self, raw_data=None):
         self.user = os.getlogin()
@@ -27,7 +28,6 @@ class Updates:
 
         """ Retrieve raw_data from file path and formats it in a DatFrame """
         try:
-
             if not os.path.exists(self.file_path):
                 print("Making Directory in: " + self.file_path)
                 auto.alert(f"Creating directory at: {self.file_path}\nLo Siento, but you're going to have to run program again. \n(ノಠ益ಠ)ノ彡┻━┻", "Parker WANTS YOU TO KNOW...")
@@ -37,10 +37,12 @@ class Updates:
 
             else:
                 print(f"Directory: {self.file_path}.")
+                os.chdir(self.file_path)
 
         except TypeError as _err:
             self.file_path = auto.prompt(text="No file path found.\nPlease enter the full file path to your data",
                                          title="FILE PATH REQUIRED")
+            os.chdir(self.file_path)
 
         list_of_files = {}
         for fil in os.listdir():
@@ -49,13 +51,14 @@ class Updates:
         self.the_file = max(list_of_files, key=self.modification_date)
 
         try:
-            if self.the_file.endswith('.csv'):
+            print(self.the_file.lower())
+            if self.the_file.lower().endswith('.csv'):
                 self.raw_data = pd.read_csv(self.the_file)
 
-            elif self.the_file.endswith('.xlsx'):
+            elif self.the_file.lower().endswith('.xlsx'):
                 self.raw_data = pd.read_excel(self.the_file)
 
-            elif self.the_file.endswith('.txt'):
+            elif self.the_file.lower().endswith('.txt'):
                 with open(self.the_file, 'r+') as file:
                     self.raw_data = file.read()
 
@@ -64,13 +67,13 @@ class Updates:
                     text="SOMETHING WENT WRONG...\nPlease enter the full file path of your raw data",
                     title="File Path Required")
 
-                if self.the_file.endswith('.csv'):
+                if self.the_file.lower().endswith('.csv'):
                     self.raw_data = pd.read_csv(self.the_file)
 
-                elif self.the_file.endswith('.xlsx'):
+                elif self.the_file.lower().endswith('.xlsx'):
                     self.raw_data = pd.read_excel(self.the_file)
 
-                elif self.the_file.endswith('.txt'):
+                elif self.the_file.lower().endswith('.txt'):
                     with open(self.the_file, 'r') as file:
                         self.raw_data = file.read()
 
@@ -80,7 +83,7 @@ class Updates:
         except AttributeError as _err:
             self.the_file = auto.alert(
                 "OOPS... \nPlease enter a fucking file for me go mess with, dude... \nWhat's your fucking problem man??",
-                "You should probably go find someon with brains.\n   Just sayin..."
+                "You should probably go find someone with brains.\n   Just sayin..."
             )
 
     # I initialized the variable file_name
@@ -151,15 +154,16 @@ class Updates:
             return self.raw_data
 
         else:
-            auto.alert("Something went wrong!\nPlease check target file extension.")
             raise Exception("Unable to obtain dataframe!\nCheck target file extension.")
+        
 
 
 class MCDM:
+
     def __init__(self):
-        up = Updates()
-        self.dataframe = up.get_dframe()
-        self.dataframe = up.convert_to_date(self.dataframe, 'Max Model Year', 'Min Model Year', add_thing='-01-01')
+        self.up = Updates()
+        self.dataframe = self.up.get_dframe()
+        self.dataframe = self.up.convert_to_date(self.dataframe, 'Max Model Year', 'Min Model Year', add_thing='-01-01')
 
         clean = dat.Data(self.dataframe)
         self.dataframe = clean.missing_values()
@@ -183,6 +187,7 @@ class MCDM:
                                                      'Local Vista Demand',
                                                      'Alliance DW Region', 'Blended Coverage')
 
+        new_dframe = {}
         for loc in df_dict.keys():
             dframe = df_dict[loc][['Part',
                 'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand',
@@ -208,21 +213,18 @@ class MCDM:
             og_df = self.dataframe.loc[self.dataframe['Location'].str.contains(loc)]
 
             # Merge rankings onto dataframe and rearranging columns
-            new_dframe = og_df.merge(ranked_df, how='inner', on='Part')
+            new_dframe[loc] = og_df.merge(ranked_df, how='inner', on='Part')
             cols = new_dframe.columns.to_list()
             cols = cols[:12] + cols[-1:] + cols[12: -1]
             new_dframe = new_dframe[cols]
 
-            # File path to Updates folder
-            user = os.getlogin()
-            file_path = r'C:\Users\\' + user + '\\Desktop\\UPDATES\\' + f'\\{loc}_Rankings.xlsx'
-            print(file_path)
-            # Write to Excel file ... (replace this with an instance method from a Data subclass!)
+
+            # Write to Excel file and format Column headers to be vertical and bold, writing to different sheets.
             """ Invoke Class to write and format the Excel File """
-            xl_format = dat.GetExcelFormat(new_dframe, file_path)
+            xl_format = dat.GetExcelFormat(new_dframe[loc], f"{self.up.file_path}" + f"\\{self.up.today}_Rankings.xlsx")
             xl_format.format_workbook(loc)
-            # new_dframe.to_excel(file_path, index=False)
 
 
 decisions = MCDM()
 decisions.wsm()
+
