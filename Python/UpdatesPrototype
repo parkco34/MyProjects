@@ -7,7 +7,8 @@ import os
 import pyautogui as auto
 from skcriteria import Data, MAX
 from skcriteria.madm import simple
-import Data as dat
+import TheData as dat
+from TheData import GetExcelFormat as getx
 
 # Expands data visibility in python terminal
 pd.options.mode.chained_assignment = None
@@ -17,7 +18,7 @@ pd.set_option('display.width', 600)
 
 
 class Updates:
-    today = date.today().strftime('%d%m%y')
+    today = date.today().strftime('%m%d%y')
 
     def __init__(self, raw_data=None):
         self.user = os.getlogin()
@@ -165,7 +166,7 @@ class MCDM:
         self.dataframe = self.up.get_dframe()
         self.dataframe = self.up.convert_to_date(self.dataframe, 'Max Model Year', 'Min Model Year', add_thing='-01-01')
 
-        clean = dat.Data(self.dataframe)
+        clean = dat.TheData(self.dataframe)
         self.dataframe = clean.missing_values()
 
 
@@ -175,7 +176,6 @@ class MCDM:
             frame = feed_df.copy()
 
             for col in criteria:
-                print(col)
                 frame[col] = (frame[col] - frame[col].min()) / (frame[col].max() - frame[col].min())
 
             return frame
@@ -190,43 +190,63 @@ class MCDM:
 
         return pre_df
 
+    def get_filename(self):
+        nof = self.up.the_file[:5] + "_" + date.today().strftime('%m%d%y') + ".xlsx"
+        try:
+            if nof not in self.up.file_path:
+                return nof
+            else:
+                nof = auto.prompt(text="Please enter a name for the Updates file ", title="File Name Export")
+                return nof
 
-decisions = MCDM()
-df_dict = decisions.get_dframe_groups('Location', 'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand',
-                'Alliance DW Region', 'Blended Coverage')
+        except:
+            print("Something went wrong, yo...")
 
-new_frame = {}
-for loc in df_dict:
-    dframe = df_dict[loc][['Part', 'Location', 'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand',
-                'Alliance DW Region', 'Blended Coverage']]
+    def WPM(self):
+        df_dict = self.get_dframe_groups('Location', 'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand',
+                        'Alliance DW Region', 'Blended Coverage')
 
-    criteria_data = Data(
-        dframe.iloc[:, 1:],
-        [MAX, MAX, MAX, MAX, MAX],
-        anames=dframe['Part'],
-        cnames=dframe.columns[1:],
-        weights=[1, 1, 1.25, 1, 1]
-    )
+        new_dframe = {}
+        for loc in df_dict:
+            dframe = df_dict[loc][['Part', 'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand',
+                        'Alliance DW Region', 'Blended Coverage']]
 
-    dm = simple.WeightedProduct(mnorm="sum")
-    dec = dm.decide(criteria_data)
+            criteria_data = Data(
+                dframe.iloc[:, 1:],
+                [MAX, MAX, MAX, MAX, MAX],
+                anames=dframe['Part'],
+                cnames=dframe.columns[1:],
+                weights=[1, 1, 1.25, 1, 1]
+            )
 
-    #Convert Ranks to Series to insert into DataFrame
-    parts = pd.Series(dec.data.anames, name="Part")
-    ranks = pd.Series(dec.rank_, name="Rank")
-    ranked_df = pd.concat([parts, ranks], axis=1)
+            dm = simple.WeightedProduct(mnorm="sum")
+            dec = dm.decide(criteria_data)
 
-    # Obtain original dataframe from each location
-    og_df = self.dataframe.loc[self.dataframe['Location'].str.contains(loc)]
+            #Convert Ranks to Series to insert into DataFrame
+            parts = pd.Series(dec.data.anames, name="Part")
+            ranks = pd.Series(dec.rank_, name="Rank")
+            ranked_df = pd.concat([parts, ranks], axis=1)
 
-    # Merge rankings onto dataframe and rearranging columns
-    new_dframe[loc] = og_df.merge(ranked_df, how='inner', on='Part')
-    cols = new_dframe.columns.to_list()
-    cols = cols[:12] + cols[-1:] + cols[12: -1]
-    new_dframe = new_dframe[cols]
-    
-print(new_dframe)
-#    """ Write to one excel file, multiple sheets by column and format column
-#    headers to be bold and vertical """
+            # Obtain original dataframe from each location
+            og_df = self.dataframe.loc[self.dataframe['Location'].str.contains(loc)]
 
+            # Merge rankings onto dataframe and rearranging columns
+            new_dframe[loc] = og_df.merge(ranked_df, how='inner', on='Part')
+            cols = new_dframe[loc].columns.to_list()
+            cols = cols[:12] + cols[-1:] + cols[12: -1]
+
+        return new_dframe
+
+
+def write_to_excel(sheet_named_after):
+    decisions = MCDM()
+    dfs = decisions.WPM()
+
+    with pd.ExcelWriter(decisions.get_filename(), engine='xlsxwriter') as writ:
+        for df in dfs.values():
+            sheet = df[sheet_named_after][34][5:]
+            getx.format_workbook(writ, sheet)
+
+# Run it:
+write_to_excel('Location')
 
