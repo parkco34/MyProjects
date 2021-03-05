@@ -1,6 +1,6 @@
 import pandas as pd
 
-class Data:
+class TheData:
 
     def __init__(self, dataframe):
         self.dataframe = dataframe
@@ -22,16 +22,17 @@ class Data:
         return self.dataframe
 
 
-class GetExcelFormat(Data):
+class GetExcelFormat(TheData):
     def __init__(self, dataframe):
-        Data.__init__(self, dataframe)
+        TheData.__init__(self, dataframe)
 
     def __str__(self):
         return "HI, there fella..."
 
     """ Formats the column headers to be bold and vertical by writing the dataframe to excel file.
         Then creating a Workbook and Worksheet object in order to do the formatting. """
-    def format_workbook(self, writer, name_of_sheet):
+    @staticmethod
+    def format_workbook(writer, name_of_sheet):
         self.dataframe.to_excel(writer, startrow=1, header=False, index=False, sheet_name=name_of_sheet)
 
         self.workbook = writer.book
