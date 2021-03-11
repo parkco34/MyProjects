@@ -8,7 +8,6 @@ import pyautogui as auto
 from skcriteria import Data, MAX
 from skcriteria.madm import simple
 import TheData as dat
-from TheData import GetExcelFormat as getx
 
 # Expands data visibility in python terminal
 pd.options.mode.chained_assignment = None
@@ -158,16 +157,16 @@ class Updates:
             raise Exception("Unable to obtain dataframe!\nCheck target file extension.")
         
 
-
 class MCDM:
+    global thedata
 
     def __init__(self):
         self.up = Updates()
         self.dataframe = self.up.get_dframe()
         self.dataframe = self.up.convert_to_date(self.dataframe, 'Max Model Year', 'Min Model Year', add_thing='-01-01')
 
-        clean = dat.TheData(self.dataframe)
-        self.dataframe = clean.missing_values()
+        thedata = dat.TheData(self.dataframe)
+        self.dataframe = thedata.missing_values()
 
 
     def get_dframe_groups(self, the_column, *criteria):
@@ -234,10 +233,32 @@ class MCDM:
             new_dframe[loc] = og_df.merge(ranked_df, how='inner', on='Part')
             cols = new_dframe[loc].columns.to_list()
             cols = cols[:12] + cols[-1:] + cols[12: -1]
+            new_dframe[loc] = new_dframe[loc][cols]
 
         return new_dframe
 
+    """ Formats the column headers to be bold and vertical by writing the dataframe to excel file.
+        Then creating a Workbook and Worksheet object in order to do the formatting. """
+    @staticmethod
+    def format_workbook(dataframe, writer, name_of_sheet):
+        dataframe.to_excel(writer, sheet_name=name_of_sheet, header=False,
+                index=False, startrow=1)
 
+        workbook = writer.book
+        worksheet = writer.sheets[name_of_sheet]
+
+        header_format = workbook.add_format({
+            'bold': True,
+            'align': 'center',
+            'font_color': 'black'
+        })
+        header_format.set_rotation(90)
+
+        for col, val in enumerate(dataframe.columns.values):
+            worksheet.write(0, col, val, header_format)
+
+
+""" Takes the DataFrame groups from the MCDM and inserts them into their individual Excel Worksheets """
 def write_to_excel(sheet_named_after):
     decisions = MCDM()
     dfs = decisions.WPM()
@@ -245,8 +266,7 @@ def write_to_excel(sheet_named_after):
     with pd.ExcelWriter(decisions.get_filename(), engine='xlsxwriter') as writ:
         for df in dfs.values():
             sheet = df[sheet_named_after][34][5:]
-            getx.format_workbook(writ, sheet)
+            decisions.format_workbook(df, writer=writ, name_of_sheet=sheet)
 
 # Run it:
 write_to_excel('Location')
-
