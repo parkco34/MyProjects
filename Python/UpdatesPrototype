@@ -1,214 +1,91 @@
-import pandas as pd
-import numpy as np
-import dateutil.parser as dtup
-from io import StringIO
-from datetime import datetime, date
 import os
-import pyautogui as auto
+import pandas as pd
 from skcriteria import Data, MAX
 from skcriteria.madm import simple
-import TheData as dat
+import difflib
+import re
 
-# Expands data visibility in python terminal
-pd.options.mode.chained_assignment = None
-pd.set_option('display.max_columns', 500)
-pd.set_option('display.max_rows', 200)
-pd.set_option('display.width', 600)
+# """ Opportunity to implement a Decorator for something in here !!!! 
+#     Also, you need to generalize this to handle situations where it's not a dataframe, 
+#         but a list, tuple, dictionary, etc. *** """
+# """ Takes the unique values of a collection and replaces values that are nearly the same with one of em. 
+#         Returns the dataframe. """
+# def replace_values(dataframe, the_column):
+#     """ Appends all the unique values in a dataframe column to a lits and returns the list """
+#     def unique_values(dataframe, the_column, items=[]):
+#         items = [i for i in dataframe[the_column].unique()]
 
+#         return items
 
-class Updates:
-    today = date.today().strftime('%m%d%y')
+#     k = 0
+#     for i in unique_values(dataframe, the_column):
+#         for j in dataframe[the_column]:
+#             seq = difflib.SequenceMatcher(None, i, j).ratio() * 100
+#             # If the length of the list of unique column values has been exceeded, exit loop
+#             print(k)
+#             if k > len(dataframe[the_column]) + 1:
+#                 print("BREAK!")
+                
+#             # If the two values are equal, keep it moving...
+#             elif j == i:
+#                 k += 1
+#                 continue
+#             # If the two values are nearly the same, replace one and make it the standard...
+#             elif (seq >= 75) & (i != j):
+#                 val = re.sub(i, j, i)
+#                 dataframe[the_column].replace(to_replace=i, value=j, inplace=True)
+#                 k += 1
 
-    def __init__(self, raw_data=None):
-        self.user = os.getlogin()
-        self.raw_data = raw_data
+#     return dataframe
 
-        self.file_path = "C:\\Users\\" + self.user + r"\Desktop\UPDATES"
-        os.chdir("C:\\Users\\" + self.user + "\\Desktop")
+os.chdir(r'C:\Users\cparker\Desktop')
 
-        """ Retrieve raw_data from file path and formats it in a DatFrame """
-        try:
-            if not os.path.exists(self.file_path):
-                print("Making Directory in: " + self.file_path)
-                auto.alert(f"Creating directory at: {self.file_path}\nLo Siento, but you're going to have to run program again. \n(ノಠ益ಠ)ノ彡┻━┻", "Parker WANTS YOU TO KNOW...")
-                os.mkdir(self.file_path)
+df = pd.read_csv(r'C:\Users\cparker\Desktop\Copy of REID DDG BOS SHOES .csv')
 
-                exit()
+""" Groups separate dataframes according to the part type and returns a dictionary """
+def part_types(dataframe, the_column, part_type_dict={}):
+    for _type in dataframe[the_column].unique():
+        part_type_dict[_type] = dataframe.loc[dataframe[the_column] == _type]
 
-            else:
-                print(f"Directory: {self.file_path}.")
-                os.chdir(self.file_path)
+    return part_type_dict
 
-        except TypeError as _err:
-            self.file_path = auto.prompt(text="No file path found.\nPlease enter the full file path to your data",
-                                         title="FILE PATH REQUIRED")
-            os.chdir(self.file_path)
+dfx = part_types(df, 'Std Part Description')
 
-        list_of_files = {}
-        for fil in os.listdir():
-            list_of_files[fil] = os.path.getmtime(fil)
+def get_dframe_groups(dataframe, the_column, *criteria):
+    
+    def min_max_scaling(feed_df):
+        frame = feed_df.copy()
 
-        self.the_file = max(list_of_files, key=self.modification_date)
+        for col in criteria:
+            frame[col] = (frame[col] - frame[col].min()) / (frame[col].max() - frame[col].min())
 
-        try:
-            print(self.the_file.lower())
-            if self.the_file.lower().endswith('.csv'):
-                self.raw_data = pd.read_csv(self.the_file)
+        return frame
 
-            elif self.the_file.lower().endswith('.xlsx'):
-                self.raw_data = pd.read_excel(self.the_file)
+    locations = {}
+    pre_df = {}
 
-            elif self.the_file.lower().endswith('.txt'):
-                with open(self.the_file, 'r+') as file:
-                    self.raw_data = file.read()
+    for loc in dataframe[the_column].unique():
+        locations[loc] = dataframe.loc[dataframe[the_column] == loc]
+        # Refactor below... possibly using REGEX!
+        pre_df[loc[13:]] = min_max_scaling(locations[loc])
 
-            else:
-                self.the_file = auto.prompt(
-                    text="SOMETHING WENT WRONG...\nPlease enter the full file path of your raw data",
-                    title="File Path Required")
+    return pre_df
+    
 
-                if self.the_file.lower().endswith('.csv'):
-                    self.raw_data = pd.read_csv(self.the_file)
+df_dict = get_dframe_groups(df, 'Location', 'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand',
+                'Alliance DW Region', 'Blended Coverage')
 
-                elif self.the_file.lower().endswith('.xlsx'):
-                    self.raw_data = pd.read_excel(self.the_file)
+""" Returns a dictionary of dataframes """
+def get_dframes():
+    new_dframe = {}
+    for loc in df_dict:
+        for _type in df_dict[loc]['Std Part Description'].unique():
+            new_dframe.__setitem__(loc+'_'+_type, df_dict[loc].loc[df_dict[loc]['Std Part Description'] == _type])
+            
+        # dframe = df_dict[loc][['Part', 'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand',
+        #             'Alliance DW Region', 'Blended Coverage']]
 
-                elif self.the_file.lower().endswith('.txt'):
-                    with open(self.the_file, 'r') as file:
-                        self.raw_data = file.read()
-
-                else:
-                    auto.alert("Losiento...", "ERROR OCCURRED!\nFind Cory and have him solve the problem.")
-
-        except AttributeError as _err:
-            self.the_file = auto.alert(
-                "OOPS... \nPlease enter a fucking file for me go mess with, dude... \nWhat's your fucking problem man??",
-                "You should probably go find someone with brains.\n   Just sayin..."
-            )
-
-    # I initialized the variable file_name
-    def __str__(self, file_name=None):
-        if self.the_file:
-            file_name = self.the_file.split('\\')[-1]
-
-        return f"File Name: {file_name}."
-
-    """ Function to get to latest file modified in the directory """
-
-    @staticmethod
-    def modification_date(file_loc):
-        t = os.path.getmtime(file_loc)
-        return datetime.fromtimestamp(t)
-
-    """ Takes a dataframe and if the selected columns are floats: convert to integers and then datetimes as YEAR only.
-          Else if the entire column(s) are needed to be datetime without specific format, time_change=True. 
-
-           Future Changes
-          ------------------ 
-            Add the option to make datetime column as an INDEX for possible Time Series Analysis      """
-
-    @classmethod
-    def convert_to_date(cls, dataframe, *column_list, add_thing=None):
-
-        if all(x == float for x in dataframe[([*column_list])].dtypes):
-            # If type FLOAT, round down and change type to STRING
-            for na in dataframe[([*column_list])]:
-                if len([*column_list]) > 1:
-                    dataframe = dataframe[dataframe[na].notna()]
-                    dataframe.loc[:, na] = dataframe[na].astype(int)
-                    dataframe.loc[:, na] = dataframe[na].astype(str) + add_thing
-                    dataframe.loc[:, na] = dataframe[na].apply(lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
-
-                else:
-                    dataframe = dataframe[dataframe[na].notna()]
-                    dataframe.loc[:, na] = dataframe[na].astype(int)
-                    dataframe.loc[:, na] = dataframe[na].astype(str) + add_thing
-                    dataframe[na] = dataframe[na].apply(
-                        lambda _: datetime.strptime(_, '%Y-%m-%d').date().year)
-
-            return dataframe
-
-        elif all(x == object for x in dataframe[([*column_list])].dtypes):
-            for na in dataframe[([*column_list])]:
-                dataframe.loc[:, na] = dataframe[na].astype(str)
-                dataframe.loc[:, na] = dataframe[na].apply(lambda _: dtup.parse(_).date().year)
-
-            return dataframe
-
-        elif all((x == int) or (x == np.int64) for x in dataframe[([*column_list])].dtypes):
-            print("No need to make any changes...")
-            return dataframe
-
-        else:
-            raise Exception("Must first obtain dataframe through the 'get_dframe' instance method.\nOR\nCheck"
-                            "your target columns")
-
-    def get_dframe(self):
-        if type(self.raw_data) == str:
-            string_data = StringIO(self.raw_data)
-            self.raw_data = pd.read_csv(string_data)
-
-            return self.raw_data
-
-        elif type(self.raw_data) == pd.core.frame.DataFrame:
-            return self.raw_data
-
-        else:
-            raise Exception("Unable to obtain dataframe!\nCheck target file extension.")
-        
-
-class MCDM:
-    global thedata
-
-    def __init__(self):
-        self.up = Updates()
-        self.dataframe = self.up.get_dframe()
-        self.dataframe = self.up.convert_to_date(self.dataframe, 'Max Model Year', 'Min Model Year', add_thing='-01-01')
-
-        thedata = dat.TheData(self.dataframe)
-        self.dataframe = thedata.missing_values()
-
-
-    def get_dframe_groups(self, the_column, *criteria):
-        
-        def min_max_scaling(feed_df):
-            frame = feed_df.copy()
-
-            for col in criteria:
-                frame[col] = (frame[col] - frame[col].min()) / (frame[col].max() - frame[col].min())
-
-            return frame
-
-        locations = {}
-        pre_df = {}
-
-        for loc in self.dataframe[the_column].unique():
-            locations[loc] = self.dataframe.loc[self.dataframe[the_column] == loc]
-            # Refactor below... possibly using REGEX!
-            pre_df[loc[13:]] = min_max_scaling(locations[loc])
-
-        return pre_df
-
-    def get_filename(self):
-        nof = self.up.the_file[:5] + "_" + date.today().strftime('%m%d%y') + ".xlsx"
-        try:
-            if nof not in self.up.file_path:
-                return nof
-            else:
-                nof = auto.prompt(text="Please enter a name for the Updates file ", title="File Name Export")
-                return nof
-
-        except:
-            print("Something went wrong, yo...")
-
-    def WPM(self):
-        df_dict = self.get_dframe_groups('Location', 'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand',
-                        'Alliance DW Region', 'Blended Coverage')
-
-        new_dframe = {}
-        for loc in df_dict:
-            dframe = df_dict[loc][['Part', 'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand',
-                        'Alliance DW Region', 'Blended Coverage']]
+            
 
             criteria_data = Data(
                 dframe.iloc[:, 1:],
@@ -226,47 +103,35 @@ class MCDM:
             ranks = pd.Series(dec.rank_, name="Rank")
             ranked_df = pd.concat([parts, ranks], axis=1)
 
-            # Obtain original dataframe from each location
-            og_df = self.dataframe.loc[self.dataframe['Location'].str.contains(loc)]
-
-            # Merge rankings onto dataframe and rearranging columns
+            og_df = df.loc[df['Location'].str.contains(loc)]
             new_dframe[loc] = og_df.merge(ranked_df, how='inner', on='Part')
             cols = new_dframe[loc].columns.to_list()
             cols = cols[:12] + cols[-1:] + cols[12: -1]
             new_dframe[loc] = new_dframe[loc][cols]
 
-        return new_dframe
+    return new_dframe
+    
 
-    """ Formats the column headers to be bold and vertical by writing the dataframe to excel file.
-        Then creating a Workbook and Worksheet object in order to do the formatting. """
-    @staticmethod
-    def format_workbook(dataframe, writer, name_of_sheet):
-        dataframe.to_excel(writer, sheet_name=name_of_sheet, header=False,
-                index=False, startrow=1)
+def format_workbook(dataframe, writer, name_of_sheet):
+    dataframe.to_excel(writer, sheet_name=name_of_sheet, header=False,
+            index=False, startrow=1)
 
-        workbook = writer.book
-        worksheet = writer.sheets[name_of_sheet]
+    workbook = writer.book
+    worksheet = writer.sheets[name_of_sheet]
 
-        header_format = workbook.add_format({
-            'bold': True,
-            'align': 'center',
-            'font_color': 'black'
-        })
-        header_format.set_rotation(90)
+    header_format = workbook.add_format({
+        'bold': True,
+        'align': 'center',
+        'font_color': 'black'
+    })
+    header_format.set_rotation(90)
 
-        for col, val in enumerate(dataframe.columns.values):
-            worksheet.write(0, col, val, header_format)
+    for col, val in enumerate(dataframe.columns.values):
+        worksheet.write(0, col, val, header_format)
 
 
-""" Takes the DataFrame groups from the MCDM and inserts them into their individual Excel Worksheets """
-def write_to_excel(sheet_named_after):
-    decisions = MCDM()
-    dfs = decisions.WPM()
+with pd.ExcelWriter(r'UPDATES\newshit.xlsx', engine='xlsxwriter') as writ:
+    for df in get_dframes().values():
+        sheet = df['Location'][34][5:]
+        format_workbook(dataframe=df, writer=writ, name_of_sheet=sheet)
 
-    with pd.ExcelWriter(decisions.get_filename(), engine='xlsxwriter') as writ:
-        for df in dfs.values():
-            sheet = df[sheet_named_after][34][5:]
-            decisions.format_workbook(df, writer=writ, name_of_sheet=sheet)
-
-# Run it:
-write_to_excel('Location')
