@@ -7,7 +7,7 @@ import os
 import pyautogui as auto
 from skcriteria import Data, MAX
 from skcriteria.madm import simple
-import Data as dat
+import TheData as dat
 
 # Expands data visibility in python terminal
 pd.options.mode.chained_assignment = None
@@ -17,7 +17,7 @@ pd.set_option('display.width', 600)
 
 
 class Updates:
-    today = date.today().strftime('%d%m%y')
+    today = date.today().strftime('%m%d%y')
 
     def __init__(self, raw_data=None):
         self.user = os.getlogin()
@@ -30,7 +30,8 @@ class Updates:
         try:
             if not os.path.exists(self.file_path):
                 print("Making Directory in: " + self.file_path)
-                auto.alert(f"Creating directory at: {self.file_path}\nLo Siento, but you're going to have to run program again. \n(ノಠ益ಠ)ノ彡┻━┻", "Parker WANTS YOU TO KNOW...")
+                auto.alert(f"Creating directory at: {self.file_path}\n\nLo Siento... but you're going to have to run the program \
+                        again. \n\n(ノಠ益ಠ)ノ彡┻━┻", "Parker WANTS YOU TO KNOW...")
                 os.mkdir(self.file_path)
 
                 exit()
@@ -48,9 +49,9 @@ class Updates:
         for fil in os.listdir():
             list_of_files[fil] = os.path.getmtime(fil)
 
-        self.the_file = max(list_of_files, key=self.modification_date)
-
         try:
+            self.the_file = max(list_of_files, key=self.modification_date)
+
             print(self.the_file.lower())
             if self.the_file.lower().endswith('.csv'):
                 self.raw_data = pd.read_csv(self.the_file)
@@ -80,10 +81,8 @@ class Updates:
                 else:
                     auto.alert("Losiento...", "ERROR OCCURRED!\nFind Cory and have him solve the problem.")
 
-        except AttributeError as _err:
-            self.the_file = auto.alert(
-                "OOPS... \nPlease enter a fucking file for me go mess with, dude... \nWhat's your fucking problem man??",
-                "You should probably go find someone with brains.\n   Just sayin..."
+        except ValueError as _err:
+            self.the_file = auto.prompt(text="Please enter a file location for me to search for ", title="OOPS...    ¯\_( ⊙_ʖ⊙ )_/¯ \n\nPlease enter a file location "
             )
 
     # I initialized the variable file_name
@@ -157,7 +156,6 @@ class Updates:
             raise Exception("Unable to obtain dataframe!\nCheck target file extension.")
         
 
-
 class MCDM:
 
     def __init__(self):
@@ -165,66 +163,120 @@ class MCDM:
         self.dataframe = self.up.get_dframe()
         self.dataframe = self.up.convert_to_date(self.dataframe, 'Max Model Year', 'Min Model Year', add_thing='-01-01')
 
-        clean = dat.Data(self.dataframe)
-        self.dataframe = clean.missing_values()
+        thedata = dat.TheData(self.dataframe)
+        self.dataframe = thedata.missing_values()
 
-    @staticmethod
-    def min_max_scaling(feed_df, *columnz):
-        colz = list(columnz)
-        frame = feed_df.copy()
 
-        for col in colz:
-            frame[col] = (frame[col] - frame[col].min()) / (frame[col].max() - frame[col].min())
+    def get_dframe_groups(self, the_column, *criteria):
+        
+        def min_max_scaling(feed_df):
+            frame = feed_df.copy()
 
-        return frame
+            for col in criteria:
+                frame[col] = (frame[col] - frame[col].min()) / (frame[col].max() - frame[col].min())
 
-    def wsm(self):
+            return frame
+
         locations = {}
-        df_dict = {}
-        for loc in self.dataframe['Location'].unique():
-            locations[loc] = self.dataframe.loc[self.dataframe['Location'] == loc]
-            df_dict[loc[13:]] = self.min_max_scaling(locations[loc], 'Last 12 Mo Sales', 'Local Experian VIO',
-                                                     'Local Vista Demand',
-                                                     'Alliance DW Region', 'Blended Coverage')
+        pre_df = {}
 
+        for loc in self.dataframe[the_column].unique():
+            locations[loc] = self.dataframe.loc[self.dataframe[the_column] == loc]
+            # Refactor below... possibly using REGEX!
+            pre_df[loc[13:]] = min_max_scaling(locations[loc])
+
+        return pre_df
+
+    def get_filename(self):
+        nof = self.up.the_file[:5] + "_" + date.today().strftime('%m%d%y') + ".xlsx"
+        try:
+            if nof not in self.up.file_path:
+                return nof
+            else:
+                nof = auto.prompt(text="Please enter a name for the Updates file ", title="File Name Export")
+                return nof
+
+        except:
+            print("Something went wrong, yo...")
+
+    def WPM(self):
+        frames = {}
+        temp_dict = {}
         new_dframe = {}
-        for loc in df_dict.keys():
-            dframe = df_dict[loc][['Part',
-                'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand',
-                'Alliance DW Region', 'Blended Coverage']]
 
-            criteria_data = Data(
-                dframe.iloc[:, 1:],
-                [MAX, MAX, MAX, MAX, MAX],
-                anames=dframe['Part'],
-                cnames=dframe.columns[1:],
-                weights=[1, 1, 1.25, 1, 1]
-            )
+        df_dict = self.get_dframe_groups('Location', 'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand',
+                        'Alliance DW Region', 'Blended Coverage')
 
-            dm = simple.WeightedSum(mnorm="sum")
-            dec = dm.decide(criteria_data)
+        for loc in df_dict:
+            frames[loc] = pd.DataFrame([])
 
-            # Convert Ranks to Series to insert into Dataframe
-            parts = pd.Series(dec.data.anames, name="Part")
-            ranks = pd.Series(dec.rank_, name="Rank")
-            ranked_df = pd.concat([parts, ranks], axis=1)
+            for _type in df_dict[loc]['Std Part Description'].unique():
+                new_dframe.__setitem__(loc+'_'+_type,
+                        df_dict[loc].loc[df_dict[loc]['Std Part Description']
+                            == _type])
 
-            # Obtain original dataframe from each location
-            og_df = self.dataframe.loc[self.dataframe['Location'].str.contains(loc)]
+                dframe = new_dframe[loc+'_'+_type][['Part', 'Last 12 Mo Sales', 'Local Experian VIO', 'Local Vista Demand',
+                            'Alliance DW Region', 'Blended Coverage']].fillna(0)
 
-            # Merge rankings onto dataframe and rearranging columns
-            new_dframe[loc] = og_df.merge(ranked_df, how='inner', on='Part')
-            cols = new_dframe.columns.to_list()
-            cols = cols[:12] + cols[-1:] + cols[12: -1]
-            new_dframe = new_dframe[cols]
+                criteria_data = Data(
+                    dframe.iloc[:, 1:],
+                    [MAX, MAX, MAX, MAX, MAX],
+                    anames=dframe['Part'],
+                    cnames=dframe.columns[1:],
+                    weights=[1, 1, 1.25, 1, 1]
+                )
+
+                dm = simple.WeightedProduct(mnorm="sum")
+                dec = dm.decide(criteria_data)
+
+                #Convert Ranks to Series to insert into DataFrame
+                parts = pd.Series(dec.data.anames, name="Part")
+                ranks = pd.Series(dec.rank_, name="Rank")
+                ranked_df = pd.concat([parts, ranks], axis=1)
+
+                # Obtain original dataframe from each location
+                og_df = self.dataframe.loc[self.dataframe['Location'].str.contains(loc)]
+
+                # Merge rankings onto dataframe and rearranging columns
+                temp_dict[loc + '_' + _type] = og_df.merge(ranked_df, how='inner', on='Part')
+                cols = temp_dict[loc + '_' + _type].columns.to_list()
+                cols = cols[:12] + cols[-1:] + cols[12: -1]
+                temp_dict[loc + '_' + _type] = temp_dict[loc + '_' + _type][cols]
+
+                frames[loc] = pd.concat([frames[loc], temp_dict[loc + '_' + _type]], axis=0, ignore_index=True)
+
+        return frames
+
+    """ Formats the column headers to be bold and vertical by writing the dataframe to excel file.
+        Then creating a Workbook and Worksheet object in order to do the formatting. """
+    @staticmethod
+    def format_workbook(dataframe, writer, name_of_sheet):
+        dataframe.to_excel(writer, sheet_name=name_of_sheet, header=False,
+                index=False, startrow=1)
+
+        workbook = writer.book
+        worksheet = writer.sheets[name_of_sheet]
+
+        header_format = workbook.add_format({
+            'bold': True,
+            'align': 'center',
+            'font_color': 'black'
+        })
+        header_format.set_rotation(90)
+
+        for col, val in enumerate(dataframe.columns.values):
+            worksheet.write(0, col, val, header_format)
 
 
-            # Write to Excel file and format Column headers to be vertical and bold, writing to different sheets.
-            """ Invoke Class to write and format the Excel File """
-            xl_format = dat.GetExcelFormat(new_dframe[loc], f"{self.up.file_path}" + f"\\{self.up.today}_Rankings.xlsx")
-            xl_format.format_workbook(loc)
+""" Takes the DataFrame groups from the MCDM and inserts them into their individual Excel Worksheets """
+def write_to_excel(sheet_named_after):
+    decisions = MCDM()
+    dfs = decisions.WPM()
 
+    with pd.ExcelWriter(decisions.get_filename(), engine='xlsxwriter') as writ:
+        for df in dfs.values():
+            sheet = df[sheet_named_after][34][5:]
+            decisions.format_workbook(df, writer=writ, name_of_sheet=sheet)
 
-decisions = MCDM()
-decisions.wsm()
-
+# Run it:
+write_to_excel('Location')
